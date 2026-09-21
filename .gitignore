@@ -9,3 +9,9 @@ site/dist
 
 # os
 .DS_Store
+
+# OMC 운영 상태 (커밋 대상 아님)
+.omc/
+
+# TS 빌드 캐시
+*.tsbuildinfo

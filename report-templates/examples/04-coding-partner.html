@@ -1,0 +1,81 @@
+<!--ONEDAY
+{"student":"코딩하는너구리","stage":"04-coding-partner","project":"친구 파티 궁합 분석기","summary":"HTML/CSS/JS 한 파일로 3화면·입력·궁합 점수·카드까지 작동하는 첫 버전 완성","payload":{"stack":"HTML + CSS + JavaScript (한 파일)","done":["홈/입력/결과 3화면 전환","친구 2명 이름·특징 입력 폼","특징 기반 궁합 점수 계산(간단 규칙)","캐릭터 카드 렌더링","한줄평 표시"],"test":["시작 버튼 → 입력 화면 뜨는지","빈 칸으로 분석하면 안내 뜨는지","같은 입력이면 같은 점수 나오는지","모바일 폭에서 안 깨지는지"],"next":["AI로 한줄평 더 자연스럽게","카드 이미지 저장","특징 태그 추천"],"howToRun":"index.html 더블클릭하면 브라우저에서 바로 실행"}}
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>친구 파티 궁합 분석기 — 코딩 결과</title>
+<style>
+  :root{--ink:#1f2233;--muted:#6b7280;--accent:#059669;--accent2:#34d399;--soft:#e9faf3;--line:#eee;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:#fafafe;line-height:1.6;}
+  .wrap{max-width:680px;margin:0 auto;padding:28px 18px 72px;}
+  header{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(0,0,0,.08);}
+  .badge{display:inline-block;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.3px;}
+  header .eyebrow{margin:12px 0 4px;font-size:14px;opacity:.92;}
+  header h1{margin:0;font-size:25px;line-height:1.3;}
+  header .sub{margin:10px 0 0;font-size:14px;opacity:.92;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px;box-shadow:0 4px 14px rgba(31,34,51,.04);}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--accent);}
+  .card p{margin:0;color:#33374a;}
+  ul{margin:6px 0 0;padding-left:20px;}li{margin:5px 0;}
+  .check{list-style:none;padding-left:0;}
+  .check li{position:relative;padding-left:26px;}
+  .check li::before{content:"☑";position:absolute;left:0;color:var(--accent);font-size:15px;}
+  .done li{position:relative;padding-left:26px;list-style:none;}
+  .done{padding-left:0;}
+  .done li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700;}
+  .pill{display:inline-block;background:var(--soft);color:var(--accent);border-radius:8px;padding:3px 9px;font-size:13px;font-weight:600;}
+  .foot{margin-top:22px;text-align:center;color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="badge">예시 · SAMPLE</span>
+      <p class="eyebrow">🤖 코딩 파트너 · 3교시 · Done / Test / Next</p>
+      <h1>친구 파티 궁합 분석기</h1>
+      <p class="sub">작동하는 첫 버전 완성 — <span class="pill" style="background:rgba(255,255,255,.2);color:#fff;">HTML + CSS + JavaScript (한 파일)</span></p>
+    </header>
+
+    <div class="card">
+      <h2>✅ Done — 이번에 만든 것</h2>
+      <ul class="done">
+        <li>홈 / 입력 / 결과 3화면 전환</li>
+        <li>친구 2명 이름·특징 입력 폼</li>
+        <li>특징 기반 궁합 점수 계산(간단 규칙)</li>
+        <li>캐릭터 카드 렌더링</li>
+        <li>한줄평 표시</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🧪 Test — 직접 확인할 것</h2>
+      <ul class="check">
+        <li>시작 버튼 → 입력 화면이 뜨는지</li>
+        <li>빈 칸으로 분석하면 안내가 뜨는지</li>
+        <li>같은 입력이면 같은 점수가 나오는지</li>
+        <li>모바일 폭에서 화면이 안 깨지는지</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>▶ 실행 방법</h2>
+      <p><b>index.html</b> 을 더블클릭하면 브라우저에서 바로 실행돼요.</p>
+    </div>
+
+    <div class="card">
+      <h2>➡ Next — 다음에 추가할 것</h2>
+      <ul>
+        <li>AI로 한줄평 더 자연스럽게</li>
+        <li>카드 이미지 저장</li>
+        <li>특징 태그 추천</li>
+      </ul>
+    </div>
+
+    <p class="foot">AI 메이커데이 · 4단계 코딩 파트너 예시 보고서 · 코딩하는너구리</p>
+  </div>
+</body>
+</html>

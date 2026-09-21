@@ -21,12 +21,31 @@
 ## 학생 흐름
 
 ```
-Claude 데스크탑에서 스킬 사용 → 결과 + HTML 보고서(아티팩트) 생성
+Claude 데스크탑에서 스킬 사용 → 결과 + HTML 보고서 생성
   → "이 부분 바꿔줘"로 계속 다듬기
-  → 최종 HTML 복사/다운로드
-QR로 연 사이트 → [결과 제출] → HTML 붙여넣기/업로드 → 미리보기 → 제출
+  → 바탕화면 「AI메이커데이」 폴더에 <단계>.html 로 저장 (8단계 = 파일 8개)
+QR로 연 사이트 → [결과 제출] → 그 HTML 붙여넣기/업로드 → 미리보기 → 제출
   → 강사 [대시보드]에 실시간 반영 + 강의 후 데이터셋
 ```
+
+## 바탕화면 저장 흐름
+
+각 스킬의 마지막 단계는 완성한 HTML 보고서를 학생 컴퓨터 **바탕화면의 `AI메이커데이` 폴더**에 저장하도록 안내한다.
+
+```
+~/Desktop/AI메이커데이/
+├── 01-idea-coach.html
+├── 02-project-planner.html
+├── ...
+└── 08-demo-coach.html      # 단계마다 파일 이름 고정 → 8단계 = 파일 8개
+```
+
+- 파일 이름이 단계 코드로 고정이라, 하루가 끝나면 한 폴더에 8개 보고서가 순서대로 쌓인다.
+- 학생은 이 폴더에서 파일을 골라 제출 사이트 **결과 제출**에 올리면 된다.
+
+> **중요 — 파일 시스템 접근이 필요하다.** Claude 데스크탑이 로컬 파일에 쓰려면 **Filesystem 확장(Extension = 로컬 MCP)** 이 켜져 있어야 한다. (원격 "커넥터"가 아니라 로컬에서 도는 "확장"이다.) 켜져 있지 않으면 스킬은 자동으로 **다운로드 후 저장** 방식으로 안내한다: 학생이 바탕화면에 `AI메이커데이` 폴더를 만들고 내려받은 파일을 `<단계>.html` 이름으로 그 안에 저장한다. 설정 방법·학생 흐름·강사 준비는 [`docs/filesystem-connector.md`](docs/filesystem-connector.md) 참고.
+
+각 단계 제출물이 실제로 어떤 모습인지는 [`report-templates/examples/`](report-templates/examples) 의 더미 예시 8종에서 그대로 확인할 수 있다.
 
 ## 폴더 구조
 
@@ -37,7 +56,10 @@ AI-edu/
 │   ├── src/lib/           # skills, parse(ONEDAY), store(supabase|local)
 │   └── public/skills/     # 배포되는 스킬 8종 (.md, 제출블록 포함)
 ├── skills/                # (원본 참고용 — 배포본은 site/public/skills)
-├── report-templates/      # 제출 보고서 형식 안내 + 예시 HTML
+├── report-templates/      # 제출 보고서 형식 안내
+│   ├── submission-footer.md   # 각 스킬에 붙는 "바탕화면 저장 + 제출" 안내(__STAGE__ 템플릿)
+│   └── examples/              # 스킬 8종 제출물 예시(더미 데이터) 01~08.html
+├── scripts/               # footer 반영/예시 검증 유틸(mjs)
 └── supabase/              # DB 스키마 + RLS
 ```
 
