@@ -13,7 +13,7 @@ export type AppId = "home" | "materials" | "submit" | "dashboard" | "setup" | "h
 export const APP_META: Record<AppId, { title: string; w: number; h: number; off: [number, number] }> = {
   home: { title: "홈 — AI 메이커데이", w: 720, h: 600, off: [0, 0] },
   materials: { title: "강의 자료", w: 720, h: 580, off: [-46, 22] },
-  submit: { title: "결과 제출", w: 860, h: 600, off: [40, 40] },
+  submit: { title: "결과 제출", w: 700, h: 640, off: [40, 40] },
   dashboard: { title: "강사 대시보드", w: 900, h: 580, off: [24, -6] },
   setup: { title: "준비하기", w: 700, h: 600, off: [-30, 60] },
   help: { title: "읽어보기", w: 480, h: 460, off: [60, 30] },

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AppLink } from "../os/windows";
 import { SKILLS, skillById } from "../lib/skills";
 import { parseReport, metaSummary } from "../lib/parse";
@@ -12,28 +12,56 @@ type Status =
   | { kind: "done"; id: string }
   | { kind: "error"; message: string };
 
+function prettySize(bytes: number): string {
+  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
+}
+
 export default function Submit() {
   const { nickname, studentId, status: idStatus } = useStudent();
-  const [stage, setStage] = useState<string>(SKILLS[0].id);
-  const [html, setHtml] = useState<string>("");
+  const [html, setHtml] = useState("");
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
+  const [stage, setStage] = useState(""); // 자동 인식 결과 (실패 시 학생이 직접 선택)
+  const [dragging, setDragging] = useState(false);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const parsed = useMemo(() => (html.trim() ? parseReport(html) : null), [html]);
+  const detected =
+    parsed?.meta?.stage && skillById(String(parsed.meta.stage))
+      ? String(parsed.meta.stage)
+      : null;
+  const skill = stage ? skillById(stage) : undefined;
   const ready = idStatus === "ready" && !!nickname;
+  const project = parsed?.meta?.project ? String(parsed.meta.project) : "";
+  const summary = metaSummary(parsed?.meta ?? null);
 
-  // 붙여넣은 보고서에 stage 정보가 있으면 단계를 자동으로 맞춘다.
-  // (닉네임은 정체성으로 고정이므로 자동 변경하지 않는다.)
-  function applyMetaDefaults() {
-    if (!parsed?.meta) return;
-    if (parsed.meta.stage && skillById(String(parsed.meta.stage))) {
-      setStage(String(parsed.meta.stage));
+  async function handleFile(f: File) {
+    if (!/\.html?$/i.test(f.name) && f.type !== "text/html") {
+      setStatus({ kind: "error", message: "HTML 파일(.html)만 올릴 수 있어요." });
+      return;
     }
+    const text = await f.text();
+    const p = parseReport(text);
+    const s = p.meta?.stage ? String(p.meta.stage) : "";
+    setHtml(text);
+    setFileInfo({ name: f.name, size: f.size });
+    setStage(skillById(s) ? s : "");
+    setStatus({ kind: "idle" });
   }
 
-  async function onFile(file: File) {
-    const text = await file.text();
-    setHtml(text);
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) handleFile(f);
+  }
+
+  function reset() {
+    setHtml("");
+    setFileInfo(null);
+    setStage("");
     setStatus({ kind: "idle" });
+    if (inputRef.current) inputRef.current.value = "";
   }
 
   async function submit() {
@@ -42,7 +70,11 @@ export default function Submit() {
       return;
     }
     if (!html.trim()) {
-      setStatus({ kind: "error", message: "제출할 HTML 보고서를 붙여넣거나 업로드해 주세요." });
+      setStatus({ kind: "error", message: "제출할 HTML 파일을 올려 주세요." });
+      return;
+    }
+    if (!stage) {
+      setStatus({ kind: "error", message: "어떤 단계의 결과인지 골라 주세요." });
       return;
     }
     setStatus({ kind: "saving" });
@@ -52,8 +84,8 @@ export default function Submit() {
         student: nickname,
         student_id: studentId,
         stage,
-        project: (meta?.project as string) ?? null,
-        summary: metaSummary(meta) || null,
+        project: project || null,
+        summary: summary || null,
         payload: meta?.payload ?? meta ?? null,
         report_html: html,
         session_code: null,
@@ -67,184 +99,219 @@ export default function Submit() {
     }
   }
 
-  const currentSkill = skillById(stage);
-
-  return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-extrabold">결과 제출</h1>
-        <p className="mt-1 text-slate-400">
-          Claude가 만들어준 HTML 보고서를 붙여넣거나 파일로 올리세요. 미리보기로 확인한 뒤
-          제출합니다.
-        </p>
-        {!usingSupabase() && (
-          <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-            지금은 <b>로컬 저장 모드</b>예요 (Supabase 미연결). 제출물은 이 브라우저에만
-            저장됩니다. 실제 수업에서는 Supabase를 연결하세요.
-          </p>
-        )}
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* 입력 영역 */}
-        <div className="space-y-4">
-          {/* 제출자(정체성) — 홈에서 정한 닉네임으로 고정 */}
-          {ready ? (
-            <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm">
-              <span className="text-slate-400">
-                제출자{" "}
-                <b className="ml-1 text-indigo-300">{nickname}</b>
-              </span>
-              <AppLink app="home" className="text-xs text-slate-500 underline hover:text-slate-300">
-                홈에서 변경
-              </AppLink>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
-              먼저{" "}
-              <AppLink app="home" className="font-semibold underline">
-                홈
-              </AppLink>
-              에서 닉네임을 정해 주세요. 제출은 그 닉네임으로 하나로 모여요.
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-300">
-              어떤 단계의 결과인가요?
-            </label>
-            <select
-              value={stage}
-              onChange={(e) => setStage(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-indigo-400"
-            >
-              {SKILLS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.emoji} {s.order}. {s.ko} — {s.output}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-300">
-                HTML 보고서
-              </label>
-              <label className="cursor-pointer rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-200 transition hover:bg-slate-800">
-                파일 업로드
-                <input
-                  type="file"
-                  accept=".html,text/html"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) onFile(f);
-                  }}
-                />
-              </label>
-            </div>
-            <textarea
-              value={html}
-              onChange={(e) => {
-                setHtml(e.target.value);
-                setStatus({ kind: "idle" });
-              }}
-              placeholder="<!--ONEDAY ... --> 로 시작하는 HTML을 여기에 붙여넣으세요."
-              className="thin-scroll h-56 w-full rounded-lg border border-slate-700 bg-slate-950 p-3 font-mono text-xs leading-relaxed outline-none focus:border-indigo-400"
-            />
-          </div>
-
-          {/* 파싱 결과 안내 */}
-          {parsed && (
-            <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-sm">
-              {parsed.meta ? (
-                <div className="space-y-1">
-                  <div className="text-emerald-300">✓ 제출 데이터를 인식했어요</div>
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs text-slate-400">
-                    {parsed.meta.student && (
-                      <>
-                        <dt>학생</dt>
-                        <dd className="text-slate-200">{String(parsed.meta.student)}</dd>
-                      </>
-                    )}
-                    {parsed.meta.stage && (
-                      <>
-                        <dt>단계</dt>
-                        <dd className="text-slate-200">{String(parsed.meta.stage)}</dd>
-                      </>
-                    )}
-                    {parsed.meta.project && (
-                      <>
-                        <dt>프로젝트</dt>
-                        <dd className="text-slate-200">{String(parsed.meta.project)}</dd>
-                      </>
-                    )}
-                  </dl>
-                  <button
-                    onClick={applyMetaDefaults}
-                    className="mt-1 text-xs text-indigo-300 underline"
-                  >
-                    이 정보로 단계 자동 맞추기
-                  </button>
-                </div>
-              ) : parsed.parseError ? (
-                <div className="text-amber-300">⚠ {parsed.parseError}</div>
-              ) : (
-                <div className="text-amber-300">
-                  ⚠ 숨은 제출 데이터(ONEDAY 블록)가 없어요. 그래도 제출할 수 있지만, 위에서
-                  단계를 직접 골라주세요.
-                </div>
-              )}
-              {!parsed.isHtmlDoc && html.trim() && (
-                <div className="mt-1 text-xs text-slate-500">
-                  참고: HTML 문서 형태가 아닌 것 같아요. 미리보기가 비어 보일 수 있어요.
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={submit}
-              disabled={status.kind === "saving" || !ready}
-              className="rounded-xl bg-indigo-500 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-50"
-            >
-              {status.kind === "saving" ? "제출 중…" : "제출하기"}
-            </button>
-            {status.kind === "done" && (
-              <span className="text-sm text-emerald-300">
-                제출 완료! →{" "}
-                <AppLink app="dashboard" className="underline">
-                  대시보드에서 보기
-                </AppLink>
-              </span>
-            )}
-            {status.kind === "error" && (
-              <span className="text-sm text-red-400">에러: {status.message}</span>
-            )}
-          </div>
+  // ---------- 제출 완료 ----------
+  if (status.kind === "done") {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-3xl">
+          ✓
         </div>
-
-        {/* 미리보기 영역 */}
         <div>
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-300">미리보기</span>
-            {currentSkill && (
-              <span className="text-xs text-slate-500">
-                {currentSkill.emoji} {currentSkill.ko}
-              </span>
-            )}
-          </div>
-          {html.trim() ? (
-            <ReportPreview html={html} className="h-[60vh] w-full rounded-xl border border-slate-700 bg-white" />
-          ) : (
-            <div className="flex h-[60vh] items-center justify-center rounded-xl border border-dashed border-slate-700 text-sm text-slate-500">
-              여기에 보고서 미리보기가 표시됩니다
-            </div>
-          )}
+          <h1 className="text-xl font-extrabold">제출 완료!</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            {skill ? `${skill.emoji} ${skill.ko}` : stage} · {nickname}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <AppLink
+            app="dashboard"
+            className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-400"
+          >
+            대시보드에서 보기
+          </AppLink>
+          <button
+            onClick={reset}
+            className="rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+          >
+            다른 파일 제출하기
+          </button>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <header>
+        <h1 className="text-2xl font-extrabold">결과 제출</h1>
+        <p className="mt-1 text-sm text-slate-400">
+          Claude가 만든 <b className="text-slate-200">HTML 파일</b>만 올리면 끝이에요. 단계와 내용은
+          파일에서 자동으로 인식돼요.
+        </p>
+      </header>
+
+      {/* 제출자 / 안내 */}
+      {ready ? (
+        <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm">
+          <span className="text-slate-400">
+            제출자 <b className="ml-1 text-indigo-300">{nickname}</b>
+          </span>
+          <AppLink app="home" className="text-xs text-slate-500 underline hover:text-slate-300">
+            홈에서 변경
+          </AppLink>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+          먼저{" "}
+          <AppLink app="home" className="font-semibold underline">
+            홈
+          </AppLink>
+          에서 닉네임을 정해 주세요. 제출은 그 닉네임으로 하나로 모여요.
+        </div>
+      )}
+
+      {!usingSupabase() && (
+        <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          지금은 <b>로컬 저장 모드</b>예요 (Supabase 미연결). 제출물은 이 브라우저에만 저장됩니다.
+        </p>
+      )}
+
+      {/* ---------- 파일 없음: 드롭존 ---------- */}
+      {!html ? (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          onClick={() => inputRef.current?.click()}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-16 text-center transition ${
+            dragging
+              ? "border-indigo-400 bg-indigo-500/10"
+              : "border-slate-700 bg-slate-900/30 hover:border-slate-600 hover:bg-slate-900/60"
+          }`}
+        >
+          <svg
+            width="44"
+            height="44"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={dragging ? "#a5b4fc" : "#64748b"}
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 16V4" />
+            <path d="M7 9l5-5 5 5" />
+            <path d="M4 16v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2" />
+          </svg>
+          <div className="text-base font-bold">
+            {dragging ? "여기에 놓으세요" : "HTML 파일을 끌어다 놓으세요"}
+          </div>
+          <div className="text-sm text-slate-400">
+            또는 <span className="text-indigo-300 underline">클릭해서 선택</span>
+          </div>
+          <div className="text-xs text-slate-500">
+            바탕화면 <b className="text-slate-400">AI메이커데이</b> 폴더에 저장된 파일이에요
+          </div>
+        </div>
+      ) : (
+        /* ---------- 파일 선택됨: 인식 결과 + 미리보기 + 제출 ---------- */
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="text-3xl">{skill?.emoji ?? "📄"}</div>
+                <div className="min-w-0">
+                  {detected ? (
+                    <div className="text-xs font-semibold text-emerald-300">
+                      ✓ 단계를 자동으로 인식했어요
+                    </div>
+                  ) : (
+                    <div className="text-xs font-semibold text-amber-300">
+                      ⚠ 파일에서 단계 정보를 못 찾았어요
+                    </div>
+                  )}
+                  <div className="mt-0.5 truncate font-bold">
+                    {skill ? `${skill.order}. ${skill.ko}` : "단계를 골라주세요"}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-slate-500">
+                    {fileInfo?.name} · {fileInfo ? prettySize(fileInfo.size) : ""}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={reset}
+                className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800"
+              >
+                다른 파일
+              </button>
+            </div>
+
+            {(project || summary) && (
+              <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-slate-800 pt-3 text-xs">
+                {project && (
+                  <>
+                    <dt className="text-slate-500">프로젝트</dt>
+                    <dd className="truncate text-slate-200">{project}</dd>
+                  </>
+                )}
+                {summary && (
+                  <>
+                    <dt className="text-slate-500">요약</dt>
+                    <dd className="line-clamp-2 text-slate-300">{summary}</dd>
+                  </>
+                )}
+              </dl>
+            )}
+
+            {/* 인식 실패 시에만 직접 선택 */}
+            {!detected && (
+              <select
+                value={stage}
+                onChange={(e) => {
+                  setStage(e.target.value);
+                  setStatus({ kind: "idle" });
+                }}
+                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              >
+                <option value="">어떤 단계의 결과인가요?</option>
+                {SKILLS.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.emoji} {s.order}. {s.ko}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* 주요 동작은 스크롤 없이 바로 보이도록 미리보기보다 위에 둔다 */}
+          <button
+            onClick={submit}
+            disabled={status.kind === "saving" || !ready || !stage}
+            className="w-full rounded-xl bg-indigo-500 px-5 py-3 font-bold text-white transition hover:bg-indigo-400 disabled:opacity-40"
+          >
+            {status.kind === "saving" ? "제출 중…" : "제출하기"}
+          </button>
+
+          {/* 확인용 미리보기 */}
+          <div>
+            <div className="mb-1 text-xs font-medium text-slate-500">미리보기</div>
+            <ReportPreview
+              html={html}
+              className="h-64 w-full rounded-xl border border-slate-700 bg-white"
+            />
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".html,text/html"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+        }}
+      />
+
+      {status.kind === "error" && (
+        <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {status.message}
+        </p>
+      )}
     </div>
   );
 }

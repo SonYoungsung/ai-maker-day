@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import "./os.css";
 import { WindowsProvider, useWindows } from "./windows";
 import { IconDefs } from "./icons";
@@ -12,6 +12,18 @@ function ShellInner() {
   const { windows } = useWindows();
   const blob1 = useRef<HTMLDivElement>(null);
   const blob2 = useRef<HTMLDivElement>(null);
+
+  // 드롭존 바깥에 파일을 떨어뜨리면 브라우저가 그 파일로 이동해 버려
+  // 작업 중인 데스크톱이 날아간다 — 전역에서 기본 동작을 막는다.
+  useEffect(() => {
+    const prevent = (e: DragEvent) => e.preventDefault();
+    window.addEventListener("dragover", prevent);
+    window.addEventListener("drop", prevent);
+    return () => {
+      window.removeEventListener("dragover", prevent);
+      window.removeEventListener("drop", prevent);
+    };
+  }, []);
 
   // 최상단(활성) 창
   let topId: string | null = null, topZ = -1;
