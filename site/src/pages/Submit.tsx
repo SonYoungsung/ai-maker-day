@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { AppLink } from "../os/windows";
 import { SKILLS, skillById } from "../lib/skills";
 import { parseReport, metaSummary } from "../lib/parse";
 import { saveSubmission, usingSupabase } from "../lib/store";
@@ -95,16 +95,16 @@ export default function Submit() {
                 제출자{" "}
                 <b className="ml-1 text-indigo-300">{nickname}</b>
               </span>
-              <Link to="/" className="text-xs text-slate-500 underline hover:text-slate-300">
+              <AppLink app="home" className="text-xs text-slate-500 underline hover:text-slate-300">
                 홈에서 변경
-              </Link>
+              </AppLink>
             </div>
           ) : (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
               먼저{" "}
-              <Link to="/" className="font-semibold underline">
+              <AppLink app="home" className="font-semibold underline">
                 홈
-              </Link>
+              </AppLink>
               에서 닉네임을 정해 주세요. 제출은 그 닉네임으로 하나로 모여요.
             </div>
           )}
@@ -215,9 +215,9 @@ export default function Submit() {
             {status.kind === "done" && (
               <span className="text-sm text-emerald-300">
                 제출 완료! →{" "}
-                <Link to="/dashboard" className="underline">
+                <AppLink app="dashboard" className="underline">
                   대시보드에서 보기
-                </Link>
+                </AppLink>
               </span>
             )}
             {status.kind === "error" && (

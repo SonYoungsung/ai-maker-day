@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { AppLink } from "../os/windows";
 import { SKILLS, skillFileUrl, type SkillMeta } from "../lib/skills";
 
 function SkillCard({ skill }: { skill: SkillMeta }) {
@@ -105,9 +105,9 @@ export default function Materials() {
         <b className="text-indigo-300">사용법</b> — 스킬은 순서대로 진행하면 좋아요. 각 단계가
         끝나면 Claude가 제출용 <b>HTML 보고서</b>를 만들어 바탕화면 <b>AI메이커데이</b> 폴더에
         저장(또는 복사·다운로드)합니다. 그걸 <b>결과 제출</b> 페이지에 올리면 됩니다.{" "}
-        <Link to="/setup" className="text-indigo-300 underline">
+        <AppLink app="setup" className="text-indigo-300 underline">
           파일 저장 기능 켜기 →
-        </Link>
+        </AppLink>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

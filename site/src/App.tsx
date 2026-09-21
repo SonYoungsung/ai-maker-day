@@ -1,27 +1,8 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
-import Nav from "./components/Nav";
-import Home from "./pages/Home";
-import Setup from "./pages/Setup";
-import Materials from "./pages/Materials";
-import Submit from "./pages/Submit";
-import Dashboard from "./pages/Dashboard";
+import DesktopShell from "./os/DesktopShell";
 
+// AI 메이커 OS — 스크롤 없는 데스크톱 OS 셸.
+// 각 페이지(홈/강의자료/결과제출/대시보드/준비하기)는 드래그·리사이즈되는
+// 글래스 창 안에서 렌더된다. 데이터 계층(useStudent/store)은 그대로 사용.
 export default function App() {
-  return (
-    <HashRouter>
-      <Nav />
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/setup" element={<Setup />} />
-          <Route path="/materials" element={<Materials />} />
-          <Route path="/submit" element={<Submit />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </main>
-      <footer className="mx-auto max-w-5xl px-4 py-10 text-center text-xs text-slate-500">
-        원데이 AI 클래스 · AI와 함께 내가 상상한 것을 실제로 만드는 하루
-      </footer>
-    </HashRouter>
-  );
+  return <DesktopShell />;
 }

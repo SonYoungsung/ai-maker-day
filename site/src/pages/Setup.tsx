@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { AppLink } from "../os/windows";
 
 function StepCard({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
@@ -75,9 +75,9 @@ export default function Setup() {
           </li>
           <li>
             <b className="text-indigo-300">4.</b> 완성되면{" "}
-            <Link to="/submit" className="text-indigo-300 underline">
+            <AppLink app="submit" className="text-indigo-300 underline">
               결과 제출
-            </Link>{" "}
+            </AppLink>{" "}
             페이지에 그 파일을 올려요.
           </li>
         </ol>
@@ -95,18 +95,18 @@ export default function Setup() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Link
-          to="/materials"
+        <AppLink
+          app="materials"
           className="rounded-xl bg-indigo-500 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-400"
         >
           준비 끝 · 강의 자료 보기
-        </Link>
-        <Link
-          to="/"
+        </AppLink>
+        <AppLink
+          app="home"
           className="rounded-xl border border-slate-700 px-5 py-2.5 font-semibold text-slate-200 transition hover:bg-slate-800"
         >
           홈으로
-        </Link>
+        </AppLink>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { AppLink } from "../os/windows";
 import { useStudent } from "../lib/useStudent";
 
 function NicknameCard() {
@@ -112,24 +112,24 @@ export default function Home() {
           다듬는 과정을 AI와 함께 직접 경험합니다.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            to="/materials"
+          <AppLink
+            app="materials"
             className="rounded-xl bg-indigo-500 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-400"
           >
             강의 자료 보기
-          </Link>
-          <Link
-            to="/submit"
+          </AppLink>
+          <AppLink
+            app="submit"
             className="rounded-xl border border-slate-700 px-5 py-2.5 font-semibold text-slate-200 transition hover:bg-slate-800"
           >
             결과물 제출하기
-          </Link>
+          </AppLink>
         </div>
         <p className="mt-5 text-sm text-slate-400">
           시작 전에{" "}
-          <Link to="/setup" className="font-semibold text-indigo-300 underline">
+          <AppLink app="setup" className="font-semibold text-indigo-300 underline">
             준비하기
-          </Link>
+          </AppLink>
           에서 Claude에 파일 저장 기능을 켜두면(선택), 보고서가 바탕화면 폴더에 자동 저장돼요.
         </p>
       </section>
@@ -173,13 +173,13 @@ export default function Home() {
           <li>
             <b className="text-indigo-300">3.</b> 완성된 HTML을 바탕화면 <b>AI메이커데이</b> 폴더에
             저장(또는 복사·다운로드)해서{" "}
-            <Link to="/submit" className="text-indigo-300 underline">
+            <AppLink app="submit" className="text-indigo-300 underline">
               결과 제출
-            </Link>{" "}
+            </AppLink>{" "}
             페이지에 올리면 끝!{" "}
-            <Link to="/setup" className="text-slate-400 underline">
+            <AppLink app="setup" className="text-slate-400 underline">
               (준비하기)
-            </Link>
+            </AppLink>
           </li>
         </ol>
       </section>
