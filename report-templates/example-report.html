@@ -1,0 +1,59 @@
+<!--ONEDAY
+{"student":"코딩하는너구리","stage":"01-idea-coach","project":"친구 파티 궁합 분석기","summary":"친구들을 캐릭터로 만들어 파티 궁합을 분석하는 웹앱","payload":{"targetUser":"우리 반 친구들","coreExperience":"이름과 특징을 입력하면 캐릭터 카드와 궁합 점수가 나온다","mustHave":["친구 정보 입력","캐릭터 카드 생성","궁합 점수 계산"],"niceToHave":["결과 이미지 저장"],"later":["실시간 공유"]}}
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>친구 파티 궁합 분석기 — 아이디어 보고서</title>
+<style>
+  :root { --ink:#1a1a2e; --accent:#6c5ce7; --soft:#f1f0fb; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif; color:var(--ink); background:#fafafe; }
+  .wrap { max-width:680px; margin:0 auto; padding:32px 20px 64px; }
+  header { background:linear-gradient(135deg,#6c5ce7,#a29bfe); color:#fff; border-radius:20px; padding:28px; }
+  header p { margin:0 0 6px; opacity:.85; font-size:14px; }
+  header h1 { margin:0; font-size:26px; }
+  .card { background:#fff; border:1px solid #eceafd; border-radius:16px; padding:20px; margin-top:16px; }
+  .card h2 { margin:0 0 10px; font-size:16px; color:var(--accent); }
+  .tag { display:inline-block; background:var(--soft); color:var(--accent); border-radius:999px; padding:4px 12px; font-size:13px; margin:3px 4px 0 0; }
+  ul { margin:6px 0 0; padding-left:18px; } li { margin:3px 0; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p>💡 아이디어 코치 · 1교시</p>
+      <h1>친구 파티 궁합 분석기</h1>
+    </header>
+    <div class="card">
+      <h2>한 줄 소개</h2>
+      <p>친구들을 캐릭터로 만들어 파티 궁합을 분석하는 웹앱</p>
+    </div>
+    <div class="card">
+      <h2>누가 쓰나요</h2>
+      <p>우리 반 친구들</p>
+    </div>
+    <div class="card">
+      <h2>핵심 경험</h2>
+      <p>이름과 특징을 입력하면 캐릭터 카드와 궁합 점수가 나온다.</p>
+    </div>
+    <div class="card">
+      <h2>오늘 반드시 만들 것 (Must Have)</h2>
+      <div>
+        <span class="tag">친구 정보 입력</span>
+        <span class="tag">캐릭터 카드 생성</span>
+        <span class="tag">궁합 점수 계산</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>범위</h2>
+      <ul>
+        <li><b>Nice to Have</b> — 결과 이미지 저장</li>
+        <li><b>Later</b> — 실시간 공유</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

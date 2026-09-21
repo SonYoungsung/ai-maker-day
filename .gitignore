@@ -1,0 +1,11 @@
+# dependencies / build
+site/node_modules
+site/dist
+
+# env (anon 키라도 .env는 커밋하지 않음 — .env.example만 공유)
+.env
+.env.*
+!.env.example
+
+# os
+.DS_Store
