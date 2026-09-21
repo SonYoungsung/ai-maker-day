@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>시안 2 · Midnight Aurora — 원데이 AI 클래스</title>
+<style>
+  /* ============ 시안 2: Midnight Aurora ============
+     현재 다크 slate/indigo 정체성을 계승해 고급화.
+     심해 배경 위 오로라 그라디언트, 발광 1px 보더 글래스,
+     상단 떠있는 글래스 네비 알약 + 하단 Dock. */
+  :root {
+    --bg: #05060f;
+    --text: #eef1fb;
+    --text-soft: #a9b0cc;
+    --text-faint: #6b7391;
+    --accent: #6d7bff;       /* 인디고 (현 사이트 계승) */
+    --accent-2: #22d3ee;     /* 시안 글로우 */
+    --violet: #a855f7;
+    --glass: rgba(24, 28, 48, 0.5);
+    --glass-strong: rgba(28, 33, 58, 0.66);
+    --stroke: rgba(255, 255, 255, 0.1);
+    --radius: 26px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo",
+      "Pretendard", "Noto Sans KR", sans-serif;
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font); color: var(--text); background: var(--bg);
+    -webkit-font-smoothing: antialiased; overflow-x: hidden; min-height: 100%;
+  }
+
+  /* 오로라 배경 */
+  .blob { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.55;
+    z-index: 0; pointer-events: none; transform: translate(var(--px,0), var(--py,0));
+    transition: transform 0.6s ease-out; }
+  .blob.b1 { width: 620px; height: 620px; top: -180px; left: -120px;
+    background: radial-gradient(circle, #4f46e5, transparent 70%); animation: drift1 20s ease-in-out infinite; }
+  .blob.b2 { width: 560px; height: 560px; top: 10%; right: -160px;
+    background: radial-gradient(circle, #0891b2, transparent 70%); animation: drift2 24s ease-in-out infinite; }
+  .blob.b3 { width: 640px; height: 640px; bottom: -220px; left: 20%;
+    background: radial-gradient(circle, #9333ea, transparent 70%); animation: drift1 28s ease-in-out infinite reverse; }
+  @keyframes drift1 { 50% { transform: translate(50px, 40px) scale(1.1); } }
+  @keyframes drift2 { 50% { transform: translate(-50px, 50px) scale(1.08); } }
+  /* 미세한 그레인/스타필드 느낌 */
+  body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(255,255,255,0.25) 0.5px, transparent 0.5px);
+    background-size: 40px 40px; opacity: 0.12; }
+
+  /* ---------- 공통 글래스 (발광 보더) ---------- */
+  .glass { position: relative; background: var(--glass);
+    backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
+    border: 1px solid var(--stroke); border-radius: var(--radius);
+    box-shadow: 0 30px 60px -24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.14);
+    overflow: hidden; }
+  /* 상단 발광 그라디언트 hairline */
+  .glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+    background: linear-gradient(135deg, rgba(109,123,255,0.7), rgba(34,211,238,0.15) 40%, transparent 70%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 1; }
+  /* 커서 추적 하이라이트 */
+  .glass::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(320px circle at var(--mx,50%) var(--my,50%),
+      rgba(120,140,255,0.28), transparent 45%);
+    opacity: var(--sheen, 0); transition: opacity 0.35s ease; }
+  .glass > * { position: relative; z-index: 2; }
+
+  /* ---------- 상단 떠있는 네비 알약 ---------- */
+  .topnav { position: sticky; top: 18px; z-index: 30; display: flex; justify-content: center; padding: 18px; }
+  .nav-pill { display: flex; align-items: center; gap: 14px; padding: 9px 12px 9px 16px; border-radius: 999px; }
+  .nav-pill .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; }
+  .nav-pill .logo { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--violet)); font-size: 14px;
+    box-shadow: 0 0 18px rgba(109,123,255,0.6); }
+  .seg { position: relative; display: flex; gap: 2px; background: rgba(255,255,255,0.06);
+    border-radius: 999px; padding: 3px; }
+  .seg-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; border-radius: 999px;
+    background: linear-gradient(135deg, rgba(109,123,255,0.45), rgba(34,211,238,0.3));
+    box-shadow: 0 0 16px rgba(109,123,255,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+    transition: transform 0.45s var(--spring), width 0.45s var(--spring); z-index: 0; }
+  .seg-item { position: relative; z-index: 1; border: 0; background: transparent; cursor: pointer;
+    font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-soft);
+    padding: 7px 15px; border-radius: 999px; transition: color 0.25s; white-space: nowrap; }
+  .seg-item.active { color: #fff; }
+  .live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+    color: #6ee7b7; background: rgba(16,185,129,0.16); padding: 5px 11px; border-radius: 999px;
+    border: 1px solid rgba(16,185,129,0.3); }
+  .live-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399;
+    box-shadow: 0 0 8px #34d399, 0 0 0 0 rgba(52,211,153,0.5); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 8px #34d399, 0 0 0 6px rgba(52,211,153,0); } }
+
+  /* ---------- 본문 ---------- */
+  .stage { position: relative; z-index: 1; max-width: 940px; margin: 0 auto;
+    padding: 10px 20px 170px; display: grid; gap: 22px; }
+
+  .hero { padding: 46px 40px; }
+  .hero .kicker { font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero h1 { font-size: 40px; line-height: 1.12; font-weight: 800; margin-top: 10px; letter-spacing: -0.02em; }
+  .hero h1 .grad { background: linear-gradient(120deg, #8b93ff, #22d3ee 90%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 0 40px rgba(109,123,255,0.4); }
+  .hero p { margin-top: 16px; max-width: 32em; color: var(--text-soft); font-size: 15.5px; line-height: 1.65; }
+  .cta { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn { border: 0; cursor: pointer; font-family: var(--font); font-weight: 700; font-size: 14px;
+    padding: 12px 22px; border-radius: 14px; display: inline-flex; align-items: center; gap: 7px;
+    transition: transform 0.18s var(--spring), box-shadow 0.25s, filter 0.2s; }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary { color: #fff; background: linear-gradient(135deg, var(--accent), var(--violet));
+    box-shadow: 0 12px 30px -8px rgba(109,123,255,0.8), inset 0 1px 0 rgba(255,255,255,0.25); }
+  .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 16px 40px -8px rgba(109,123,255,0.95); }
+  .btn-ghost { color: var(--text); background: rgba(255,255,255,0.06); border: 1px solid var(--stroke);
+    backdrop-filter: blur(10px); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.12); }
+
+  .field-card { padding: 26px 28px; }
+  .field-card h2 { font-size: 18px; font-weight: 700; }
+  .field-card p { font-size: 13px; color: var(--text-faint); margin-top: 5px; }
+  .field-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; max-width: 400px; }
+  .ios-input { flex: 1; border: 1px solid var(--stroke); background: rgba(0,0,0,0.3);
+    border-radius: 12px; padding: 12px 15px; font-family: var(--font); font-size: 14px; color: var(--text);
+    outline: none; transition: border 0.2s, box-shadow 0.2s; }
+  .ios-input::placeholder { color: var(--text-faint); }
+  .ios-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(109,123,255,0.22); }
+  .saved { font-size: 13px; color: #6ee7b7; font-weight: 600; }
+
+  .flow h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .flow-card { padding: 20px; cursor: pointer; border-radius: 20px;
+    transition: transform 0.3s var(--spring), box-shadow 0.3s; }
+  .flow-card:hover { transform: translateY(-7px);
+    box-shadow: 0 30px 50px -20px rgba(0,0,0,0.8), 0 0 30px -8px rgba(109,123,255,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.14); }
+  .flow-card:active { transform: translateY(-2px) scale(0.99); }
+  .flow-card .emoji { font-size: 28px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
+  .flow-card .t { margin-top: 12px; font-weight: 700; font-size: 15px; }
+  .flow-card .d { margin-top: 4px; font-size: 12.5px; color: var(--text-faint); line-height: 1.45; }
+
+  /* ---------- Dock ---------- */
+  .dock-wrap { position: fixed; bottom: 22px; left: 0; right: 0; z-index: 40;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+  .dock-tip { pointer-events: none; font-size: 12px; font-weight: 600; color: var(--text);
+    background: var(--glass-strong); backdrop-filter: blur(20px); padding: 5px 12px; border-radius: 8px;
+    border: 1px solid var(--stroke); opacity: 0; transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s; }
+  .dock-tip.show { opacity: 1; transform: translateY(0); }
+  .dock { --dock-base: 54px; pointer-events: auto; display: flex; align-items: flex-end; gap: 10px;
+    padding: 10px 14px; border-radius: 22px; background: var(--glass);
+    backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--stroke); box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.14); }
+  .dock-item { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center;
+    font-size: 26px; cursor: pointer; position: relative;
+    transition: width 0.18s ease-out, height 0.18s ease-out, margin 0.18s ease-out;
+    box-shadow: 0 6px 16px -4px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .dock-item.i1 { background: linear-gradient(135deg, #6d7bff, #a855f7); }
+  .dock-item.i2 { background: linear-gradient(135deg, #22d3ee, #3b82f6); }
+  .dock-item.i3 { background: linear-gradient(135deg, #34d399, #059669); }
+  .dock-item.i4 { background: linear-gradient(135deg, #fbbf24, #f97316); }
+  .dock-item.bounce { animation: bounce 0.6s var(--spring); }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-22px); } }
+
+  .concept-tag { position: fixed; top: 16px; left: 16px; z-index: 50; font-size: 12px; font-weight: 700;
+    color: var(--text-soft); background: var(--glass-strong); backdrop-filter: blur(20px);
+    padding: 6px 12px; border-radius: 999px; border: 1px solid var(--stroke); }
+
+  @media (max-width: 640px) {
+    .flow-grid { grid-template-columns: 1fr 1fr; }
+    .hero { padding: 32px 24px; } .hero h1 { font-size: 30px; }
+    .seg { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+
+  <div class="concept-tag">시안 2 · Midnight Aurora</div>
+
+  <!-- 떠있는 네비 알약 -->
+  <div class="topnav">
+    <div class="nav-pill glass reveal">
+      <div class="brand"><span class="logo">🚀</span><span>AI 메이커데이</span></div>
+      <div class="seg">
+        <div class="seg-pill"></div>
+        <button class="seg-item active">홈</button>
+        <button class="seg-item">강의 자료</button>
+        <button class="seg-item">결과 제출</button>
+        <button class="seg-item">대시보드</button>
+      </div>
+      <span class="live-badge"><span class="dot"></span>실시간</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <section class="hero glass reveal">
+      <p class="kicker">오늘의 미션</p>
+      <h1>AI와 함께 내가 상상한 것을<br /><span class="grad">실제로 만드는 하루</span></h1>
+      <p>코딩 문법을 외우는 하루가 아닙니다. 생각하고 → 설명하고 → 만들고 → 고치고 → 다듬는 과정을 AI와 함께 직접 경험합니다.</p>
+      <div class="cta">
+        <button class="btn btn-primary">강의 자료 보기 →</button>
+        <button class="btn btn-ghost">결과물 제출하기</button>
+      </div>
+    </section>
+
+    <section class="field-card glass reveal">
+      <h2>먼저, 오늘 쓸 닉네임을 정해요</h2>
+      <p>제출한 결과물을 한 사람으로 묶는 데 쓰여요. 실명 대신 별명을 적어주세요.</p>
+      <div class="field-row">
+        <input class="ios-input" placeholder="예: 코딩하는너구리" value="코딩하는너구리" />
+        <span class="saved">저장됨 ✓</span>
+      </div>
+    </section>
+
+    <section class="flow reveal">
+      <h2>오늘의 흐름</h2>
+      <div class="flow-grid">
+        <div class="flow-card glass"><div class="emoji">💡</div><div class="t">아이디어 찾기</div><div class="d">만들고 싶은 걸 AI와 함께 발견</div></div>
+        <div class="flow-card glass"><div class="emoji">🗺️</div><div class="t">계획 세우기</div><div class="d">오늘 만들 크기로 범위 정하기</div></div>
+        <div class="flow-card glass"><div class="emoji">🎨</div><div class="t">화면 설계</div><div class="d">사용 흐름과 분위기 정하기</div></div>
+        <div class="flow-card glass"><div class="emoji">🤖</div><div class="t">함께 만들기</div><div class="d">AI와 첫 버전 제작</div></div>
+        <div class="flow-card glass"><div class="emoji">🐞</div><div class="t">고치기</div><div class="d">문제를 설명하고 해결</div></div>
+        <div class="flow-card glass"><div class="emoji">🎤</div><div class="t">발표하기</div><div class="d">내가 만든 걸 보여주기</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Dock -->
+  <div class="dock-wrap">
+    <div class="dock-tip"></div>
+    <div class="dock">
+      <div class="dock-item i1" data-label="홈">🏠</div>
+      <div class="dock-item i2" data-label="강의 자료">📚</div>
+      <div class="dock-item i3" data-label="결과 제출">✏️</div>
+      <div class="dock-item i4" data-label="대시보드">📊</div>
+    </div>
+  </div>
+
+  <script src="mac-interactions.js"></script>
+</body>
+</html>

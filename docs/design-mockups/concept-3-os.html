@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 메이커 OS — 데스크톱 프로토타입 (visionOS Spatial 기반)</title>
+<style>
+  /* ================================================================
+     AI 메이커 OS — 스크롤 없는 데스크톱 OS 프로토타입
+     시안 3(visionOS Spatial) 팔레트 계승.
+     아이콘은 전부 손수 만든 macOS 스타일 SVG (이모지 아님).
+     ================================================================ */
+  :root {
+    --text: #f4f5f7;
+    --text-soft: #c8ccd8;
+    --text-faint: #9095a8;
+    --accent: #64d2ff;
+    --accent-2: #b9f6ca;
+    --glass: rgba(60, 64, 78, 0.34);
+    --glass-strong: rgba(70, 74, 92, 0.62);
+    --glass-bar: rgba(40, 44, 58, 0.5);
+    --stroke: rgba(255, 255, 255, 0.18);
+    --stroke-soft: rgba(255, 255, 255, 0.1);
+    --radius: 18px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+    --spring: cubic-bezier(0.22, 1, 0.36, 1);
+    --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* 바탕화면 색조 (우클릭 → 배경 바꾸기로 순환) */
+    --wall-a: #6b7280;
+    --wall-b: #3a4150;
+    --wall-c: #23283a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }  /* 페이지 스크롤 원천 차단 */
+  body {
+    font-family: var(--font); color: var(--text);
+    -webkit-font-smoothing: antialiased; user-select: none; cursor: default;
+    background:
+      radial-gradient(1000px 700px at 18% 8%, var(--wall-a) 0%, transparent 55%),
+      radial-gradient(1100px 900px at 90% 100%, var(--wall-b) 0%, transparent 60%),
+      linear-gradient(160deg, #2b2f3a, var(--wall-c) 70%, #23283a);
+    transition: background 0.8s ease;
+  }
+
+  /* ---------- 배경 데스크톱 (우클릭/클릭 캡처) ---------- */
+  #desktop { position: fixed; inset: 0; z-index: 1; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.4;
+    pointer-events: none; transform: translate(var(--px,0), var(--py,0)); transition: transform 0.7s ease-out; }
+  .blob.b1 { width: 560px; height: 560px; top: -140px; left: 5%;
+    background: radial-gradient(circle, #7dd3fc, transparent 70%); animation: drift1 24s ease-in-out infinite; }
+  .blob.b2 { width: 520px; height: 520px; bottom: -180px; right: 8%;
+    background: radial-gradient(circle, #a7f3d0, transparent 70%); animation: drift2 30s ease-in-out infinite; }
+  @keyframes drift1 { 50% { transform: translate(40px, 50px) scale(1.1); } }
+  @keyframes drift2 { 50% { transform: translate(-50px, -30px) scale(1.08); } }
+
+  /* ---------- 공통 글래스 ---------- */
+  .glass { position: relative; background: var(--glass);
+    backdrop-filter: blur(30px) saturate(150%) brightness(1.08);
+    -webkit-backdrop-filter: blur(30px) saturate(150%) brightness(1.08);
+    border: 1px solid var(--stroke); }
+  .glass::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    border-radius: inherit;
+    background: radial-gradient(360px circle at var(--mx,50%) var(--my,0%),
+      rgba(255,255,255,0.16), transparent 42%);
+    opacity: var(--sheen, 0); transition: opacity 0.4s ease; }
+
+  /* ================= 메뉴바 ================= */
+  .menubar { position: fixed; top: 0; left: 0; right: 0; height: 30px; z-index: 600;
+    display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 13px;
+    background: var(--glass-bar); backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-bottom: 1px solid var(--stroke-soft); }
+  .menubar .brand { display: flex; align-items: center; gap: 7px; font-weight: 700; }
+  .menubar .menu { display: flex; gap: 16px; color: var(--text-soft); font-weight: 500; }
+  .menubar .menu span { cursor: default; padding: 2px 4px; border-radius: 5px; transition: background 0.15s; }
+  .menubar .menu span:hover { background: rgba(255,255,255,0.14); color: #fff; }
+  .menubar .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .menubar .status-ico { display: flex; align-items: center; gap: 12px; opacity: 0.92; }
+  .menubar .live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+    color: #b7f7d0; background: rgba(52,211,153,0.18); padding: 3px 9px; border-radius: 999px; }
+  .menubar .live .dot { width: 6px; height: 6px; border-radius: 50%; background: #6ee7b7;
+    box-shadow: 0 0 8px #6ee7b7; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  #clock { font-variant-numeric: tabular-nums; font-weight: 500; min-width: 128px; text-align: right; }
+
+  /* ================= 바탕화면 아이콘 ================= */
+  .desktop-icons { position: absolute; top: 46px; right: 20px; z-index: 5;
+    display: flex; flex-direction: column; gap: 8px; }
+  .desktop-icon { width: 92px; padding: 8px 6px 6px; border-radius: 12px; cursor: default;
+    display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center;
+    transition: background 0.15s, transform 0.12s var(--bounce); }
+  .desktop-icon:hover { background: rgba(255,255,255,0.08); }
+  .desktop-icon.selected { background: rgba(100,210,255,0.22); outline: 1px solid rgba(100,210,255,0.45); }
+  .desktop-icon:active { transform: scale(0.95); }
+  .desktop-icon .ico { width: 58px; height: 52px; display: grid; place-items: center;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.45)); }
+  .desktop-icon .ico svg { width: 100%; height: 100%; }
+  .desktop-icon .label { font-size: 12px; font-weight: 600; color: #fff; line-height: 1.25;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7); padding: 1px 5px; border-radius: 5px; }
+  .desktop-icon.selected .label { background: rgba(100,210,255,0.55); }
+
+  /* ================= 창(window) 레이어 ================= */
+  #windows { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+  .window { position: absolute; pointer-events: auto; display: flex; flex-direction: column;
+    border-radius: var(--radius); overflow: hidden; opacity: 0;
+    background: rgba(46, 50, 64, 0.55);
+    backdrop-filter: blur(36px) saturate(150%) brightness(1.06);
+    -webkit-backdrop-filter: blur(36px) saturate(150%) brightness(1.06);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 40px 90px -22px rgba(0,0,0,0.7), 0 8px 24px -12px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.22); }
+  .window.active { box-shadow: 0 50px 110px -22px rgba(0,0,0,0.78), 0 10px 30px -12px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.28); }
+  .titlebar { height: 42px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 14px;
+    cursor: grab; border-bottom: 1px solid var(--stroke-soft);
+    background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); }
+  .titlebar:active { cursor: grabbing; }
+  .traffic { display: flex; gap: 8px; }
+  .traffic i { width: 13px; height: 13px; border-radius: 50%; cursor: pointer; display: grid; place-items: center;
+    font-size: 9px; font-weight: 800; font-style: normal; color: rgba(0,0,0,0.5); line-height: 1; }
+  .traffic .r { background: #ff5f57; } .traffic .y { background: #febc2e; } .traffic .g { background: #28c840; }
+  .traffic i::before { opacity: 0; transition: opacity 0.15s; }
+  .window:hover .traffic .r::before, .traffic:hover .r::before { content: "×"; opacity: 1; }
+  .window:hover .traffic .y::before, .traffic:hover .y::before { content: "−"; opacity: 1; }
+  .window:hover .traffic .g::before, .traffic:hover .g::before { content: "+"; opacity: 1; font-size: 8px; }
+  .win-title { font-size: 13px; font-weight: 600; color: var(--text-soft); pointer-events: none;
+    position: absolute; left: 0; right: 0; text-align: center; }
+  .window:not(.active) .titlebar { opacity: 0.72; }
+  .win-body { flex: 1; overflow: auto; padding: 22px; }
+  .win-body::-webkit-scrollbar { width: 9px; }
+  .win-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 8px;
+    border: 2px solid transparent; background-clip: padding-box; }
+
+  /* ---------- 리사이즈 핸들 (8방향) ---------- */
+  .resize-handle { position: absolute; z-index: 8; }
+  .rh-n { top: 0; left: 10px; right: 10px; height: 5px; cursor: ns-resize; }
+  .rh-s { bottom: 0; left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+  .rh-e { top: 10px; bottom: 10px; right: 0; width: 6px; cursor: ew-resize; }
+  .rh-w { top: 10px; bottom: 10px; left: 0; width: 5px; cursor: ew-resize; }
+  .rh-ne, .rh-nw, .rh-se, .rh-sw { width: 16px; height: 16px; z-index: 9; }
+  .rh-ne { top: 0; right: 0; cursor: nesw-resize; }
+  .rh-nw { top: 0; left: 0; cursor: nwse-resize; }
+  .rh-se { bottom: 0; right: 0; cursor: nwse-resize; }
+  .rh-sw { bottom: 0; left: 0; cursor: nesw-resize; }
+
+  /* ---------- 창 내부 콘텐츠 공통 스타일 ---------- */
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .win-body h1 { font-size: 30px; line-height: 1.12; font-weight: 700; margin-top: 12px; letter-spacing: -0.02em; }
+  .win-body h1 .grad { background: linear-gradient(120deg, #a7ecff, #d5ffe4);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .win-body .lead { margin-top: 14px; color: var(--text-soft); font-size: 14.5px; line-height: 1.65; max-width: 34em; }
+  .cta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { border: 0; cursor: pointer; font-family: var(--font); font-weight: 600; font-size: 13.5px;
+    padding: 11px 20px; border-radius: 999px; display: inline-flex; align-items: center; gap: 7px;
+    transition: transform 0.16s var(--bounce), box-shadow 0.25s, background 0.2s; }
+  .btn:active { transform: scale(0.94); }
+  .btn-primary { color: #10222c; background: linear-gradient(135deg, #a7ecff, #d5ffe4);
+    box-shadow: 0 12px 28px -10px rgba(100,210,255,0.7), inset 0 1px 0 rgba(255,255,255,0.6); }
+  .btn-primary:hover { box-shadow: 0 16px 38px -10px rgba(100,210,255,0.9); }
+  .btn-ghost { color: var(--text); background: rgba(255,255,255,0.1); border: 1px solid var(--stroke); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+
+  .panel { margin-top: 18px; padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.06);
+    border: 1px solid var(--stroke-soft); }
+  .panel h2 { font-size: 16px; font-weight: 700; }
+  .panel p.sub { font-size: 12.5px; color: var(--text-faint); margin-top: 4px; }
+  .field-row { display: flex; gap: 10px; align-items: center; margin-top: 14px; }
+  .ios-input, .ios-select, .ios-area { border: 1px solid var(--stroke); background: rgba(0,0,0,0.24);
+    border-radius: 12px; padding: 11px 14px; font-family: var(--font); font-size: 14px; color: var(--text);
+    outline: none; transition: border 0.2s, box-shadow 0.2s; width: 100%; }
+  .ios-input:focus, .ios-select:focus, .ios-area:focus { border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(100,210,255,0.22); }
+  .ios-input::placeholder, .ios-area::placeholder { color: var(--text-faint); }
+  .ios-area { min-height: 110px; resize: none; font-family: ui-monospace, "SF Mono", monospace; font-size: 12px; line-height: 1.55; }
+  .saved { font-size: 13px; color: #a7f3d0; font-weight: 600; white-space: nowrap; }
+  label.fld { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; }
+
+  .section-title { font-size: 15px; font-weight: 700; margin: 22px 0 12px; }
+  .flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .flow-card { padding: 16px; border-radius: 14px; cursor: pointer; text-align: center;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--stroke-soft);
+    transition: transform 0.25s var(--spring), box-shadow 0.25s, background 0.25s; }
+  .flow-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.1);
+    box-shadow: 0 18px 30px -16px rgba(0,0,0,0.7); }
+  .flow-card:active { transform: translateY(-1px) scale(0.98); }
+  .flow-card .fico { width: 34px; height: 34px; margin: 0 auto; }
+  .flow-card .t { margin-top: 10px; font-weight: 700; font-size: 13.5px; }
+  .flow-card .d { margin-top: 3px; font-size: 11.5px; color: var(--text-faint); line-height: 1.4; }
+
+  .skill-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 14px;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--stroke-soft); margin-bottom: 10px; }
+  .skill-card .sico { width: 38px; height: 38px; flex: none; }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    background: rgba(100,210,255,0.2); color: #bfeaff; }
+  .mini-btn { border: 1px solid var(--stroke); background: rgba(255,255,255,0.08); color: var(--text);
+    font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 9px; cursor: pointer;
+    transition: transform 0.14s var(--bounce), background 0.2s; }
+  .mini-btn:hover { background: rgba(255,255,255,0.16); } .mini-btn:active { transform: scale(0.93); }
+  .mini-btn.primary { background: linear-gradient(135deg, #a7ecff, #d5ffe4); color: #10222c; border: 0; }
+
+  .sub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .sub-card { padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.06);
+    border: 1px solid var(--stroke-soft); transition: transform 0.2s var(--spring), border 0.2s; cursor: pointer; }
+  .sub-card:hover { transform: translateY(-3px); border-color: rgba(100,210,255,0.5); }
+  .sub-card .row1 { display: flex; justify-content: space-between; align-items: center; }
+  .sub-card .who { font-weight: 700; font-size: 14px; }
+  .sub-card .ago { font-size: 11px; color: var(--text-faint); }
+  .sub-card .proj { margin-top: 8px; font-size: 13px; }
+  .sub-card .sum { margin-top: 3px; font-size: 11.5px; color: var(--text-faint); line-height: 1.4; }
+  .skeleton-note { margin-top: 14px; font-size: 12px; color: var(--text-faint);
+    border-top: 1px dashed var(--stroke); padding-top: 12px; }
+
+  /* ================= Dock ================= */
+  .dock-wrap { position: fixed; bottom: 12px; left: 0; right: 0; z-index: 500;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+  .dock-tip { pointer-events: none; font-size: 12px; font-weight: 600; color: #fff;
+    background: var(--glass-strong); backdrop-filter: blur(20px); padding: 5px 12px; border-radius: 8px;
+    border: 1px solid var(--stroke); opacity: 0; transform: translateY(6px); transition: opacity 0.2s, transform 0.2s; }
+  .dock-tip.show { opacity: 1; transform: translateY(0); }
+  .dock { pointer-events: auto; display: flex; align-items: flex-end; gap: 12px; padding: 10px 14px;
+    border-radius: 24px; background: var(--glass);
+    backdrop-filter: blur(40px) saturate(160%) brightness(1.08); -webkit-backdrop-filter: blur(40px) saturate(160%) brightness(1.08);
+    border: 1px solid var(--stroke); box-shadow: 0 30px 60px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.28); }
+  .dock-item { --base: 56px; width: var(--base); height: var(--base); position: relative; cursor: pointer;
+    transition: width 0.16s ease-out, height 0.16s ease-out, margin 0.16s ease-out;
+    filter: drop-shadow(0 8px 12px rgba(0,0,0,0.45)); }
+  .dock-item svg { width: 100%; height: 100%; display: block; }
+  .dock-item.bounce { animation: dockbounce 0.6s var(--bounce); }
+  @keyframes dockbounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-22px); } }
+  .dock-item.running::after { content: ""; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.9); }
+  .dock-sep { width: 1px; align-self: stretch; margin: 6px 2px; background: rgba(255,255,255,0.18); }
+
+  /* ================= 우클릭 컨텍스트 메뉴 ================= */
+  #context-menu { position: fixed; z-index: 700; min-width: 190px; padding: 6px; border-radius: 12px;
+    background: var(--glass-strong); backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%); border: 1px solid var(--stroke);
+    box-shadow: 0 24px 50px -14px rgba(0,0,0,0.7); display: none; font-size: 13px; }
+  #context-menu.show { display: block; animation: cmpop 0.14s var(--bounce); }
+  @keyframes cmpop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+  #context-menu .cm-item { padding: 7px 12px; border-radius: 7px; cursor: default; color: var(--text-soft); }
+  #context-menu .cm-item:hover { background: rgba(100,210,255,0.35); color: #fff; }
+  #context-menu .cm-sep { height: 1px; margin: 5px 8px; background: rgba(255,255,255,0.14); }
+
+  /* ================= 부팅 / 로그인 오버레이 ================= */
+  .overlay { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 26px; transition: opacity 0.5s ease;
+    background:
+      radial-gradient(1000px 700px at 30% 20%, #4b5568 0%, transparent 60%),
+      linear-gradient(160deg, #23283a, #12151f); }
+  .overlay.hide { opacity: 0; pointer-events: none; }
+  #boot .boot-logo { width: 84px; height: 84px; filter: drop-shadow(0 10px 26px rgba(100,210,255,0.5)); }
+  #boot .boot-name { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+  #boot .prog { width: 200px; height: 5px; border-radius: 999px; background: rgba(255,255,255,0.14); overflow: hidden; }
+  #boot .prog i { display: block; height: 100%; width: 0; border-radius: 999px;
+    background: linear-gradient(90deg, #64d2ff, #b9f6ca); animation: fill 1.15s ease forwards; }
+  @keyframes fill { to { width: 100%; } }
+  #login .avatar { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center;
+    background: linear-gradient(135deg, #64d2ff, #7c8cff); box-shadow: 0 14px 40px -10px rgba(100,140,255,0.7),
+      inset 0 2px 0 rgba(255,255,255,0.4); }
+  #login .avatar svg { width: 48px; height: 48px; }
+  #login .who { font-size: 18px; font-weight: 700; }
+  #login .hint { font-size: 13px; color: var(--text-faint); margin-top: -14px; }
+  #login .enter { display: flex; gap: 10px; align-items: center; }
+  #login input { width: 230px; border: 1px solid var(--stroke); background: rgba(255,255,255,0.1);
+    border-radius: 999px; padding: 11px 16px; font-family: var(--font); font-size: 14px; color: #fff;
+    outline: none; text-align: center; }
+  #login .go { width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+    background: linear-gradient(135deg, #a7ecff, #d5ffe4); color: #10222c; font-size: 18px; font-weight: 800;
+    transition: transform 0.16s var(--bounce); }
+  #login .go:hover { transform: scale(1.08); } #login .go:active { transform: scale(0.9); }
+  .skip { position: fixed; top: 16px; right: 18px; z-index: 1001; font-size: 12px; color: var(--text-faint);
+    background: rgba(255,255,255,0.08); border: 1px solid var(--stroke); padding: 6px 12px; border-radius: 999px;
+    cursor: pointer; transition: background 0.2s; }
+  .skip:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+  .hint-badge { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 400;
+    font-size: 12px; color: var(--text-soft); background: var(--glass-strong); backdrop-filter: blur(20px);
+    padding: 7px 15px; border-radius: 999px; border: 1px solid var(--stroke); pointer-events: none;
+    opacity: 0; transition: opacity 0.5s; }
+  .hint-badge.show { opacity: 1; }
+
+  /* 좁은 화면 안내 */
+  .small-note { display: none; }
+  @media (max-width: 860px) {
+    #windows, .dock-wrap, .desktop-icons { display: none; }
+    .small-note { display: flex; position: fixed; inset: 30px 0 0; z-index: 900; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 30px; color: var(--text-soft); }
+    .small-note b { color: #fff; font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+  <!-- ===== SVG 아이콘 심볼 정의 (재사용) ===== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <!-- 앱 아이콘 그라디언트 -->
+      <linearGradient id="g-home" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fb8ff"/><stop offset="1" stop-color="#3a74e0"/></linearGradient>
+      <linearGradient id="g-mat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ee0a8"/><stop offset="1" stop-color="#12a37a"/></linearGradient>
+      <linearGradient id="g-sub" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c39bff"/><stop offset="1" stop-color="#7c4de0"/></linearGradient>
+      <linearGradient id="g-dash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd36e"/><stop offset="1" stop-color="#f0883a"/></linearGradient>
+      <linearGradient id="g-brand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fe6ff"/><stop offset="1" stop-color="#7c8cff"/></linearGradient>
+      <linearGradient id="g-tophi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,.55)"/><stop offset="0.5" stop-color="rgba(255,255,255,.05)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>
+      <!-- 폴더 그라디언트 -->
+      <linearGradient id="g-fback" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ea8f2"/><stop offset="1" stop-color="#3d7fd6"/></linearGradient>
+      <linearGradient id="g-ffront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ad0ff"/><stop offset="1" stop-color="#5aa6f5"/></linearGradient>
+
+      <!-- 앱 아이콘: 홈 -->
+      <symbol id="ic-home" viewBox="0 0 120 120">
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-home)"/>
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-tophi)"/>
+        <path d="M60 32 L92 58 L86 58 L86 88 Q86 90 84 90 L68 90 L68 70 L52 70 L52 90 L36 90 Q34 90 34 88 L34 58 L28 58 Z" fill="#fff"/>
+      </symbol>
+      <!-- 앱 아이콘: 강의 자료 (책) -->
+      <symbol id="ic-mat" viewBox="0 0 120 120">
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-mat)"/>
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-tophi)"/>
+        <path d="M60 42 C51 35 38 35 30 40 L30 84 C38 79 51 79 60 86 C69 79 82 79 90 84 L90 40 C82 35 69 35 60 42 Z" fill="#fff"/>
+        <path d="M60 42 L60 86" stroke="rgba(18,163,122,0.35)" stroke-width="2.5"/>
+      </symbol>
+      <!-- 앱 아이콘: 결과 제출 (업로드) -->
+      <symbol id="ic-sub" viewBox="0 0 120 120">
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-sub)"/>
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-tophi)"/>
+        <path d="M60 34 L78 54 L67 54 L67 74 L53 74 L53 54 L42 54 Z" fill="#fff"/>
+        <path d="M36 66 L36 82 Q36 88 42 88 L78 88 Q84 88 84 82 L84 66" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round"/>
+      </symbol>
+      <!-- 앱 아이콘: 대시보드 (막대) -->
+      <symbol id="ic-dash" viewBox="0 0 120 120">
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-dash)"/>
+        <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-tophi)"/>
+        <rect x="34" y="62" width="13" height="26" rx="4" fill="#fff"/>
+        <rect x="53" y="46" width="13" height="42" rx="4" fill="#fff"/>
+        <rect x="72" y="54" width="13" height="34" rx="4" fill="#fff"/>
+      </symbol>
+      <!-- 폴더 -->
+      <symbol id="ic-folder" viewBox="0 0 120 96">
+        <path d="M14 22 h28 l10 10 h54 a10 10 0 0 1 10 10 v36 a10 10 0 0 1 -10 10 h-82 a10 10 0 0 1 -10 -10 v-56 a10 10 0 0 1 10 -10 z" fill="url(#g-fback)"/>
+        <path d="M8 40 h104 a8 8 0 0 1 7.8 9.9 l-7 32 a10 10 0 0 1 -9.8 8.1 h-84 a10 10 0 0 1 -9.8 -8.1 l-7 -32 a8 8 0 0 1 7.8 -9.9 z" fill="url(#g-ffront)"/>
+        <path d="M8 40 h104 a8 8 0 0 1 7.8 9.9 l-1 4.6 h-118 l-.6 -4.6 a8 8 0 0 1 7.8 -9.9 z" fill="rgba(255,255,255,0.28)"/>
+      </symbol>
+      <!-- 문서 -->
+      <symbol id="ic-doc" viewBox="0 0 96 118">
+        <path d="M16 6 h44 l24 24 v78 a8 8 0 0 1 -8 8 h-60 a8 8 0 0 1 -8 -8 v-94 a8 8 0 0 1 8 -8 z" fill="#fdfefe"/>
+        <path d="M60 6 v18 a6 6 0 0 0 6 6 h18 z" fill="#cdd3e0"/>
+        <rect x="28" y="40" width="34" height="7" rx="3.5" fill="#64d2ff"/>
+        <rect x="28" y="58" width="40" height="5" rx="2.5" fill="#c7ccd8"/>
+        <rect x="28" y="70" width="40" height="5" rx="2.5" fill="#c7ccd8"/>
+        <rect x="28" y="82" width="26" height="5" rx="2.5" fill="#c7ccd8"/>
+      </symbol>
+      <!-- 브랜드 스파클 -->
+      <symbol id="ic-spark" viewBox="0 0 24 24">
+        <path d="M12 2 L14 9.5 L21.5 12 L14 14.5 L12 22 L10 14.5 L2.5 12 L10 9.5 Z" fill="#fff"/>
+      </symbol>
+      <!-- 상태 글리프 -->
+      <symbol id="ic-search" viewBox="0 0 20 20"><circle cx="9" cy="9" r="6" fill="none" stroke="#fff" stroke-width="1.8"/><line x1="13.5" y1="13.5" x2="18" y2="18" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="ic-wifi" viewBox="0 0 22 18"><path d="M2 6 Q11 -2 20 6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M5 9.5 Q11 4 17 9.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M8 13 Q11 10 14 13" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="11" cy="15.5" r="1.4" fill="#fff"/></symbol>
+      <symbol id="ic-batt" viewBox="0 0 28 16"><rect x="1" y="2.5" width="22" height="11" rx="3" fill="none" stroke="#fff" stroke-width="1.6"/><rect x="24.5" y="6" width="2.5" height="4" rx="1.2" fill="#fff"/><rect x="3" y="4.5" width="16" height="7" rx="1.5" fill="#fff"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ===== 데스크톱 배경 ===== -->
+  <div id="desktop">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="desktop-icons">
+      <div class="desktop-icon" data-app="materials" data-icon="folder">
+        <div class="ico"><svg><use href="#ic-folder"/></svg></div>
+        <div class="label">강의 자료</div>
+      </div>
+      <div class="desktop-icon" data-app="dashboard" data-icon="folder">
+        <div class="ico"><svg><use href="#ic-folder"/></svg></div>
+        <div class="label">제출 예시</div>
+      </div>
+      <div class="desktop-icon" data-app="help" data-icon="doc">
+        <div class="ico" style="width:44px;height:52px"><svg><use href="#ic-doc"/></svg></div>
+        <div class="label">읽어보기</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 창 레이어 (동적 생성) ===== -->
+  <div id="windows"></div>
+
+  <!-- ===== 메뉴바 ===== -->
+  <div class="menubar glass">
+    <div class="brand"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#ic-spark"/></svg><span>AI 메이커데이</span></div>
+    <div class="menu"><span>파일</span><span>보기</span><span>창</span><span>도움말</span></div>
+    <div class="right">
+      <div class="status-ico">
+        <svg width="17" height="17" viewBox="0 0 20 20"><use href="#ic-search"/></svg>
+        <svg width="19" height="16" viewBox="0 0 22 18"><use href="#ic-wifi"/></svg>
+        <svg width="24" height="14" viewBox="0 0 28 16"><use href="#ic-batt"/></svg>
+      </div>
+      <span class="live"><span class="dot"></span>실시간</span>
+      <span id="clock">— —</span>
+    </div>
+  </div>
+
+  <!-- ===== Dock ===== -->
+  <div class="dock-wrap">
+    <div class="dock-tip"></div>
+    <div class="dock" id="dock">
+      <div class="dock-item" data-app="home" data-label="홈"><svg><use href="#ic-home"/></svg></div>
+      <div class="dock-item" data-app="materials" data-label="강의 자료"><svg><use href="#ic-mat"/></svg></div>
+      <div class="dock-item" data-app="submit" data-label="결과 제출"><svg><use href="#ic-sub"/></svg></div>
+      <div class="dock-item" data-app="dashboard" data-label="대시보드"><svg><use href="#ic-dash"/></svg></div>
+      <div class="dock-sep"></div>
+      <div class="dock-item" data-app="help" data-label="읽어보기"><svg><use href="#ic-doc" x="12"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ===== 우클릭 메뉴 ===== -->
+  <div id="context-menu">
+    <div class="cm-item" data-cm="tidy">아이콘 정리하기</div>
+    <div class="cm-item" data-cm="wallpaper">배경 화면 바꾸기</div>
+    <div class="cm-sep"></div>
+    <div class="cm-item" data-cm="newfolder">새 폴더</div>
+    <div class="cm-item" data-cm="view">보기 옵션…</div>
+  </div>
+
+  <div class="hint-badge" id="hintBadge">Dock 아이콘에 커서를 올려보세요 · 창 타이틀바를 드래그해보세요</div>
+
+  <!-- ===== 부팅 ===== -->
+  <div id="boot" class="overlay">
+    <svg class="boot-logo" viewBox="0 0 120 120"><rect x="12" y="12" width="96" height="96" rx="26" fill="url(#g-brand)"/><rect x="12" y="12" width="96" height="96" rx="26" fill="url(#g-tophi)"/><g transform="translate(36 36) scale(2)"><path d="M12 2 L14 9.5 L21.5 12 L14 14.5 L12 22 L10 14.5 L2.5 12 L10 9.5 Z" fill="#fff"/></g></svg>
+    <div class="boot-name">AI 메이커 OS</div>
+    <div class="prog"><i></i></div>
+  </div>
+
+  <!-- ===== 로그인 ===== -->
+  <div id="login" class="overlay hide">
+    <div class="avatar"><svg viewBox="0 0 24 24"><use href="#ic-spark"/></svg></div>
+    <div class="who">AI 메이커</div>
+    <div class="hint">닉네임을 정하고 들어가요 (Enter)</div>
+    <div class="enter">
+      <input id="loginName" placeholder="예: 코딩하는너구리" />
+      <button class="go" id="loginGo">→</button>
+    </div>
+  </div>
+
+  <div class="skip" id="skipBtn">건너뛰기 →</div>
+
+  <div class="small-note">
+    <b>데스크톱에서 열어주세요</b>
+    <div>이 프로토타입은 데스크톱 OS 경험이라 넓은 화면에서 가장 잘 보입니다.</div>
+  </div>
+
+  <script src="os-shell.js"></script>
+</body>
+</html>

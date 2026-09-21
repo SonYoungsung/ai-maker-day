@@ -3,6 +3,7 @@ import { usingSupabase } from "../lib/store";
 
 const links = [
   { to: "/", label: "홈", end: true },
+  { to: "/setup", label: "준비하기", end: false },
   { to: "/materials", label: "강의 자료", end: false },
   { to: "/submit", label: "결과 제출", end: false },
   { to: "/dashboard", label: "대시보드", end: false },

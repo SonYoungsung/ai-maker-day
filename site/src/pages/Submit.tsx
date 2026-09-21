@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { SKILLS, skillById } from "../lib/skills";
 import { parseReport, metaSummary } from "../lib/parse";
 import { saveSubmission, usingSupabase } from "../lib/store";
-import { useNickname } from "../lib/useNickname";
+import { useStudent } from "../lib/useStudent";
 import ReportPreview from "../components/ReportPreview";
 
 type Status =
@@ -13,17 +13,18 @@ type Status =
   | { kind: "error"; message: string };
 
 export default function Submit() {
-  const [nickname, setNickname] = useNickname();
+  const { nickname, studentId, status: idStatus } = useStudent();
   const [stage, setStage] = useState<string>(SKILLS[0].id);
   const [html, setHtml] = useState<string>("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   const parsed = useMemo(() => (html.trim() ? parseReport(html) : null), [html]);
+  const ready = idStatus === "ready" && !!nickname;
 
-  // 붙여넣은 보고서에 제출 데이터가 있으면 닉네임/단계를 자동 채움
+  // 붙여넣은 보고서에 stage 정보가 있으면 단계를 자동으로 맞춘다.
+  // (닉네임은 정체성으로 고정이므로 자동 변경하지 않는다.)
   function applyMetaDefaults() {
     if (!parsed?.meta) return;
-    if (parsed.meta.student && !nickname) setNickname(String(parsed.meta.student));
     if (parsed.meta.stage && skillById(String(parsed.meta.stage))) {
       setStage(String(parsed.meta.stage));
     }
@@ -36,8 +37,8 @@ export default function Submit() {
   }
 
   async function submit() {
-    if (!nickname.trim()) {
-      setStatus({ kind: "error", message: "닉네임을 먼저 입력해 주세요." });
+    if (!ready) {
+      setStatus({ kind: "error", message: "먼저 홈에서 닉네임을 정해 주세요." });
       return;
     }
     if (!html.trim()) {
@@ -48,7 +49,8 @@ export default function Submit() {
     try {
       const meta = parsed?.meta ?? null;
       const row = await saveSubmission({
-        student: nickname.trim(),
+        student: nickname,
+        student_id: studentId,
         stage,
         project: (meta?.project as string) ?? null,
         summary: metaSummary(meta) || null,
@@ -86,17 +88,26 @@ export default function Submit() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* 입력 영역 */}
         <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-300">
-              닉네임
-            </label>
-            <input
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="예: 코딩하는너구리"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-indigo-400"
-            />
-          </div>
+          {/* 제출자(정체성) — 홈에서 정한 닉네임으로 고정 */}
+          {ready ? (
+            <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm">
+              <span className="text-slate-400">
+                제출자{" "}
+                <b className="ml-1 text-indigo-300">{nickname}</b>
+              </span>
+              <Link to="/" className="text-xs text-slate-500 underline hover:text-slate-300">
+                홈에서 변경
+              </Link>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+              먼저{" "}
+              <Link to="/" className="font-semibold underline">
+                홈
+              </Link>
+              에서 닉네임을 정해 주세요. 제출은 그 닉네임으로 하나로 모여요.
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-300">
@@ -174,7 +185,7 @@ export default function Submit() {
                     onClick={applyMetaDefaults}
                     className="mt-1 text-xs text-indigo-300 underline"
                   >
-                    이 정보로 닉네임·단계 자동 채우기
+                    이 정보로 단계 자동 맞추기
                   </button>
                 </div>
               ) : parsed.parseError ? (
@@ -196,7 +207,7 @@ export default function Submit() {
           <div className="flex items-center gap-3">
             <button
               onClick={submit}
-              disabled={status.kind === "saving"}
+              disabled={status.kind === "saving" || !ready}
               className="rounded-xl bg-indigo-500 px-5 py-2.5 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-50"
             >
               {status.kind === "saving" ? "제출 중…" : "제출하기"}

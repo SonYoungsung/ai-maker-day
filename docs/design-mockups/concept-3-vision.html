@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>시안 3 · visionOS Spatial — 원데이 AI 클래스</title>
+<style>
+  /* ============ 시안 3: visionOS Spatial ============
+     뉴트럴 그래파이트 초투명 글래스. 패널이 공간에 떠 있고
+     커서를 향해 기울어진다(패럴랙스 틸트). 강한 깊이 그림자 +
+     광원 하이라이트. "공간 컴퓨팅" 미니멀. */
+  :root {
+    --text: #f4f5f7;
+    --text-soft: #c4c7d4;
+    --text-faint: #8b8fa3;
+    --accent: #64d2ff;       /* 시원한 스카이 (유일 포인트) */
+    --accent-2: #b9f6ca;     /* 민트 */
+    --glass: rgba(60, 64, 78, 0.34);
+    --glass-strong: rgba(70, 74, 90, 0.5);
+    --stroke: rgba(255, 255, 255, 0.18);
+    --radius: 30px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo",
+      "Pretendard", "Noto Sans KR", sans-serif;
+    --spring: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font); color: var(--text);
+    -webkit-font-smoothing: antialiased; overflow-x: hidden; min-height: 100%;
+    /* 뉴트럴 그래파이트 + 좌상단 따뜻한 광원 */
+    background:
+      radial-gradient(1000px 700px at 18% 8%, #6b7280 0%, transparent 55%),
+      radial-gradient(1100px 900px at 90% 100%, #3a4150 0%, transparent 60%),
+      linear-gradient(160deg, #2b2f3a, #1a1d26 70%, #23283a);
+    background-attachment: fixed;
+  }
+
+  /* 은은한 색 블롭 (거의 무채, 포인트만) */
+  .blob { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.4;
+    z-index: 0; pointer-events: none; transform: translate(var(--px,0), var(--py,0));
+    transition: transform 0.7s ease-out; }
+  .blob.b1 { width: 560px; height: 560px; top: -140px; left: 5%;
+    background: radial-gradient(circle, #7dd3fc, transparent 70%); animation: drift1 24s ease-in-out infinite; }
+  .blob.b2 { width: 520px; height: 520px; bottom: -180px; right: 8%;
+    background: radial-gradient(circle, #a7f3d0, transparent 70%); animation: drift2 30s ease-in-out infinite; }
+  @keyframes drift1 { 50% { transform: translate(40px, 50px) scale(1.1); } }
+  @keyframes drift2 { 50% { transform: translate(-50px, -30px) scale(1.08); } }
+
+  /* ---------- 공통 초투명 글래스 ---------- */
+  .glass { position: relative; background: var(--glass);
+    backdrop-filter: blur(40px) saturate(150%) brightness(1.08);
+    -webkit-backdrop-filter: blur(40px) saturate(150%) brightness(1.08);
+    border: 1px solid var(--stroke); border-radius: var(--radius);
+    /* 공중에 떠있는 깊은 그림자 */
+    box-shadow: 0 40px 80px -24px rgba(0,0,0,0.6), 0 8px 24px -12px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(0,0,0,0.1);
+    overflow: hidden; }
+  /* 광원 하이라이트 (좌상단에서 비추는 빛) + 커서 반응 */
+  .glass::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background:
+      radial-gradient(600px circle at var(--mx, 30%) var(--my, 0%),
+        rgba(255,255,255,0.22), transparent 40%),
+      linear-gradient(160deg, rgba(255,255,255,0.12), transparent 30%);
+    opacity: calc(0.5 + var(--sheen, 0) * 0.5); transition: opacity 0.4s ease; }
+  .glass > * { position: relative; z-index: 2; }
+
+  /* ---------- 떠있는 세그먼티드 네비 ---------- */
+  .topnav { position: sticky; top: 22px; z-index: 30; display: flex; justify-content: center;
+    padding: 22px 18px 0; }
+  .nav-pill { display: flex; align-items: center; gap: 16px; padding: 10px 14px 10px 18px;
+    border-radius: 999px; }
+  .nav-pill .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 14px; }
+  .nav-pill .logo { width: 28px; height: 28px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(135deg, rgba(100,210,255,0.9), rgba(185,246,202,0.7)); font-size: 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
+  .seg { position: relative; display: flex; gap: 2px; background: rgba(255,255,255,0.08);
+    border-radius: 999px; padding: 4px; }
+  .seg-pill { position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 999px;
+    background: rgba(255,255,255,0.9); box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    transition: transform 0.5s var(--spring), width 0.5s var(--spring); z-index: 0; }
+  .seg-item { position: relative; z-index: 1; border: 0; background: transparent; cursor: pointer;
+    font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-soft);
+    padding: 8px 16px; border-radius: 999px; transition: color 0.3s; white-space: nowrap; }
+  .seg-item.active { color: #1a1d26; }
+  .live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600;
+    color: #d1fae5; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--stroke); }
+  .live-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #6ee7b7;
+    box-shadow: 0 0 10px #6ee7b7; animation: pulse 2.2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ---------- 공간에 흩어진 패널 ---------- */
+  .stage { position: relative; z-index: 1; max-width: 960px; margin: 0 auto;
+    padding: 44px 24px 180px; display: grid; gap: 40px; perspective: 1400px; }
+
+  .tilt { transform-style: preserve-3d; transition: transform 0.5s var(--spring); will-change: transform; }
+
+  .hero { padding: 52px 46px; }
+  .hero .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); }
+  .hero h1 { font-size: 42px; line-height: 1.1; font-weight: 700; margin-top: 14px; letter-spacing: -0.02em;
+    text-shadow: 0 2px 30px rgba(0,0,0,0.3); }
+  .hero h1 .grad { background: linear-gradient(120deg, #a7ecff, #d5ffe4);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { margin-top: 18px; max-width: 32em; color: var(--text-soft); font-size: 15.5px; line-height: 1.7; }
+  .cta { margin-top: 30px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn { border: 0; cursor: pointer; font-family: var(--font); font-weight: 600; font-size: 14px;
+    padding: 13px 24px; border-radius: 999px; display: inline-flex; align-items: center; gap: 7px;
+    transition: transform 0.2s var(--spring), box-shadow 0.25s, background 0.25s; }
+  .btn:active { transform: scale(0.94); }
+  .btn-primary { color: #10222c; background: linear-gradient(135deg, #a7ecff, #d5ffe4);
+    box-shadow: 0 14px 34px -10px rgba(100,210,255,0.7), inset 0 1px 0 rgba(255,255,255,0.6); }
+  .btn-primary:hover { box-shadow: 0 18px 44px -10px rgba(100,210,255,0.9); }
+  .btn-ghost { color: var(--text); background: rgba(255,255,255,0.1); border: 1px solid var(--stroke);
+    backdrop-filter: blur(10px); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .field-card { padding: 30px; }
+  .field-card h2 { font-size: 18px; font-weight: 700; }
+  .field-card p { font-size: 13px; color: var(--text-faint); margin-top: 6px; line-height: 1.5; }
+  .field-row { display: flex; gap: 10px; align-items: center; margin-top: 18px; }
+  .ios-input { flex: 1; border: 1px solid var(--stroke); background: rgba(0,0,0,0.22);
+    border-radius: 14px; padding: 13px 16px; font-family: var(--font); font-size: 14px; color: var(--text);
+    outline: none; transition: border 0.2s, box-shadow 0.2s; }
+  .ios-input::placeholder { color: var(--text-faint); }
+  .ios-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(100,210,255,0.22); }
+  .saved { font-size: 13px; color: #a7f3d0; font-weight: 600; }
+
+  /* 토글 미니 카드 (공간감 강조) */
+  .mini { padding: 30px; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+  .mini .mini-title { font-size: 15px; font-weight: 700; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .toggle-row span { font-size: 13px; color: var(--text-soft); }
+  .ios-toggle { width: 50px; height: 30px; border-radius: 999px; background: rgba(255,255,255,0.16);
+    cursor: pointer; position: relative; transition: background 0.3s var(--spring); flex: none; }
+  .ios-toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
+    border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    transition: transform 0.35s var(--spring); }
+  .ios-toggle.on { background: linear-gradient(135deg, #64d2ff, #34d399); }
+  .ios-toggle.on::after { transform: translateX(20px); }
+
+  .flow-title { font-size: 19px; font-weight: 700; text-align: center; margin-bottom: -8px; }
+  .flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .flow-card { padding: 26px 22px; cursor: pointer; text-align: center; }
+  .flow-card .emoji { font-size: 32px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4)); }
+  .flow-card .t { margin-top: 14px; font-weight: 700; font-size: 15px; }
+  .flow-card .d { margin-top: 5px; font-size: 12.5px; color: var(--text-faint); line-height: 1.45; }
+
+  /* ---------- Dock ---------- */
+  .dock-wrap { position: fixed; bottom: 24px; left: 0; right: 0; z-index: 40;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+  .dock-tip { pointer-events: none; font-size: 12px; font-weight: 600; color: var(--text);
+    background: var(--glass-strong); backdrop-filter: blur(20px); padding: 5px 12px; border-radius: 8px;
+    border: 1px solid var(--stroke); opacity: 0; transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s; }
+  .dock-tip.show { opacity: 1; transform: translateY(0); }
+  .dock { --dock-base: 56px; pointer-events: auto; display: flex; align-items: flex-end; gap: 12px;
+    padding: 11px 16px; border-radius: 26px; background: var(--glass);
+    backdrop-filter: blur(40px) saturate(150%) brightness(1.08);
+    -webkit-backdrop-filter: blur(40px) saturate(150%) brightness(1.08);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 30px 60px -18px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .dock-item { width: 56px; height: 56px; border-radius: 17px; display: grid; place-items: center;
+    font-size: 27px; cursor: pointer; position: relative;
+    transition: width 0.18s ease-out, height 0.18s ease-out, margin 0.18s ease-out;
+    box-shadow: 0 8px 20px -6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4); }
+  .dock-item.i1 { background: linear-gradient(135deg, rgba(125,211,252,0.95), rgba(59,130,246,0.85)); }
+  .dock-item.i2 { background: linear-gradient(135deg, rgba(167,243,208,0.95), rgba(16,185,129,0.85)); }
+  .dock-item.i3 { background: linear-gradient(135deg, rgba(196,181,253,0.95), rgba(139,92,246,0.85)); }
+  .dock-item.i4 { background: linear-gradient(135deg, rgba(253,224,71,0.95), rgba(249,115,22,0.85)); }
+  .dock-item.bounce { animation: bounce 0.6s var(--spring); }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-22px); } }
+
+  .concept-tag { position: fixed; top: 16px; left: 16px; z-index: 50; font-size: 12px; font-weight: 700;
+    color: var(--text-soft); background: var(--glass-strong); backdrop-filter: blur(20px);
+    padding: 6px 12px; border-radius: 999px; border: 1px solid var(--stroke); }
+
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 1fr; }
+    .flow-grid { grid-template-columns: 1fr 1fr; }
+    .hero { padding: 36px 26px; } .hero h1 { font-size: 30px; }
+    .seg { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+
+  <div class="concept-tag">시안 3 · visionOS Spatial</div>
+
+  <!-- 떠있는 네비 -->
+  <div class="topnav">
+    <div class="nav-pill glass reveal">
+      <div class="brand"><span class="logo">🚀</span><span>AI 메이커데이</span></div>
+      <div class="seg">
+        <div class="seg-pill"></div>
+        <button class="seg-item active">홈</button>
+        <button class="seg-item">강의 자료</button>
+        <button class="seg-item">결과 제출</button>
+        <button class="seg-item">대시보드</button>
+      </div>
+      <span class="live-badge"><span class="dot"></span>실시간</span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <section class="hero glass tilt reveal">
+      <p class="kicker">오늘의 미션</p>
+      <h1>AI와 함께 내가 상상한 것을<br /><span class="grad">실제로 만드는 하루</span></h1>
+      <p>코딩 문법을 외우는 하루가 아닙니다. 생각하고 → 설명하고 → 만들고 → 고치고 → 다듬는 과정을 AI와 함께 직접 경험합니다.</p>
+      <div class="cta">
+        <button class="btn btn-primary">강의 자료 보기 →</button>
+        <button class="btn btn-ghost">결과물 제출하기</button>
+      </div>
+    </section>
+
+    <div class="row">
+      <section class="field-card glass tilt reveal">
+        <h2>먼저, 오늘 쓸 닉네임을 정해요</h2>
+        <p>제출한 결과물을 한 사람으로 묶는 데 쓰여요. 실명 대신 별명을 적어주세요.</p>
+        <div class="field-row">
+          <input class="ios-input" placeholder="예: 코딩하는너구리" value="코딩하는너구리" />
+          <span class="saved">저장됨 ✓</span>
+        </div>
+      </section>
+      <section class="mini glass tilt reveal">
+        <div class="mini-title">수업 설정</div>
+        <div class="toggle-row"><span>실시간 대시보드 공개</span><div class="ios-toggle on"></div></div>
+        <div class="toggle-row"><span>제출물 서로 보기</span><div class="ios-toggle"></div></div>
+      </section>
+    </div>
+
+    <section class="reveal">
+      <div class="flow-title">오늘의 흐름</div>
+      <div class="flow-grid" style="margin-top:22px">
+        <div class="flow-card glass tilt"><div class="emoji">💡</div><div class="t">아이디어 찾기</div><div class="d">만들고 싶은 걸 AI와 함께 발견</div></div>
+        <div class="flow-card glass tilt"><div class="emoji">🗺️</div><div class="t">계획 세우기</div><div class="d">오늘 만들 크기로 범위 정하기</div></div>
+        <div class="flow-card glass tilt"><div class="emoji">🎨</div><div class="t">화면 설계</div><div class="d">사용 흐름과 분위기 정하기</div></div>
+        <div class="flow-card glass tilt"><div class="emoji">🤖</div><div class="t">함께 만들기</div><div class="d">AI와 첫 버전 제작</div></div>
+        <div class="flow-card glass tilt"><div class="emoji">🐞</div><div class="t">고치기</div><div class="d">문제를 설명하고 해결</div></div>
+        <div class="flow-card glass tilt"><div class="emoji">🎤</div><div class="t">발표하기</div><div class="d">내가 만든 걸 보여주기</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Dock -->
+  <div class="dock-wrap">
+    <div class="dock-tip"></div>
+    <div class="dock">
+      <div class="dock-item i1" data-label="홈">🏠</div>
+      <div class="dock-item i2" data-label="강의 자료">📚</div>
+      <div class="dock-item i3" data-label="결과 제출">✏️</div>
+      <div class="dock-item i4" data-label="대시보드">📊</div>
+    </div>
+  </div>
+
+  <script src="mac-interactions.js"></script>
+</body>
+</html>

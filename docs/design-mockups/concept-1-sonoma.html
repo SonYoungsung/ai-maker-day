@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>시안 1 · Sonoma Daylight — 원데이 AI 클래스</title>
+<style>
+  /* ============ 시안 1: Sonoma Daylight ============
+     밝은 화이트 프로스티드 글래스 + macOS 데스크톱 앱 창.
+     신호등 컨트롤 · 라이트 툴바 · 컬러풀한 배경 위 유리 굴절. */
+  :root {
+    --ink: #1d1d1f;          /* Apple 잉크 블랙 */
+    --ink-soft: #55565c;
+    --ink-faint: #8a8b92;
+    --accent: #0a84ff;       /* iOS 블루 */
+    --accent-2: #5e5ce6;     /* iOS 인디고 */
+    --glass: rgba(255, 255, 255, 0.55);
+    --glass-strong: rgba(255, 255, 255, 0.72);
+    --hairline: rgba(255, 255, 255, 0.9);
+    --stroke: rgba(0, 0, 0, 0.06);
+    --radius: 26px;
+    --shadow: 0 30px 60px -20px rgba(30, 40, 90, 0.28);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo",
+      "Pretendard", "Noto Sans KR", sans-serif;
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100%;
+    /* Sonoma 스타일 컬러 웨이브 배경 */
+    background:
+      radial-gradient(1200px 800px at 12% -5%, #ffd9ec 0%, transparent 55%),
+      radial-gradient(1000px 900px at 105% 15%, #cfe4ff 0%, transparent 55%),
+      radial-gradient(900px 800px at 30% 110%, #d7fbe8 0%, transparent 55%),
+      radial-gradient(1100px 700px at 85% 105%, #fff0cf 0%, transparent 55%),
+      linear-gradient(160deg, #eef3ff, #f7f0ff 55%, #eefaff);
+    background-attachment: fixed;
+  }
+
+  /* 떠다니는 컬러 블롭 (유리가 굴절할 소스) */
+  .blob {
+    position: fixed; border-radius: 50%; filter: blur(60px);
+    opacity: 0.55; z-index: 0; pointer-events: none;
+    transform: translate(var(--px, 0), var(--py, 0));
+    transition: transform 0.5s ease-out;
+  }
+  .blob.b1 { width: 460px; height: 460px; top: -120px; left: -80px;
+    background: radial-gradient(circle, #ff9ecb, transparent 70%); animation: drift1 18s ease-in-out infinite; }
+  .blob.b2 { width: 520px; height: 520px; top: 5%; right: -140px;
+    background: radial-gradient(circle, #7db6ff, transparent 70%); animation: drift2 22s ease-in-out infinite; }
+  .blob.b3 { width: 480px; height: 480px; bottom: -160px; left: 25%;
+    background: radial-gradient(circle, #8ff0c2, transparent 70%); animation: drift1 26s ease-in-out infinite reverse; }
+  @keyframes drift1 { 50% { transform: translate(40px, 30px) scale(1.08); } }
+  @keyframes drift2 { 50% { transform: translate(-40px, 40px) scale(1.06); } }
+
+  /* ---------- 공통 글래스 표면 ---------- */
+  .glass {
+    position: relative;
+    background: var(--glass);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--stroke);
+    box-shadow: var(--shadow), inset 0 1px 0 var(--hairline);
+    overflow: hidden;
+  }
+  /* 커서 추적 스페큘러 하이라이트 */
+  .glass::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, 0.55), transparent 45%);
+    opacity: var(--sheen, 0); transition: opacity 0.35s ease; z-index: 1;
+  }
+  .glass > * { position: relative; z-index: 2; }
+
+  /* ---------- macOS 창 ---------- */
+  .stage { position: relative; z-index: 1; padding: 40px 20px 160px; }
+  .window {
+    max-width: 960px; margin: 0 auto; border-radius: var(--radius);
+    background: var(--glass-strong);
+    backdrop-filter: blur(40px) saturate(190%);
+    -webkit-backdrop-filter: blur(40px) saturate(190%);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 50px 100px -30px rgba(30, 40, 90, 0.4), inset 0 1px 0 var(--hairline);
+    overflow: hidden;
+  }
+  /* 타이틀바 + 신호등 */
+  .titlebar {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; border-bottom: 1px solid var(--stroke);
+    background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.15));
+  }
+  .traffic { display: flex; gap: 8px; }
+  .traffic span {
+    width: 13px; height: 13px; border-radius: 50%; cursor: pointer;
+    display: grid; place-items: center; font-size: 9px; font-weight: 700;
+    color: rgba(0,0,0,0.5); transition: filter 0.2s;
+  }
+  .traffic .r { background: #ff5f57; }
+  .traffic .y { background: #febc2e; }
+  .traffic .g { background: #28c840; }
+  .traffic span::before { content: ""; opacity: 0; transition: opacity 0.15s; }
+  .traffic:hover .r::before { content: "×"; opacity: 1; }
+  .traffic:hover .y::before { content: "−"; opacity: 1; }
+  .traffic:hover .g::before { content: "+"; opacity: 1; font-size: 8px; }
+  .win-title { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+  .live-badge {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: #1a8f3c;
+    background: rgba(40, 200, 64, 0.14); padding: 4px 10px; border-radius: 999px;
+  }
+  .live-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #28c840;
+    box-shadow: 0 0 0 0 rgba(40,200,64,0.5); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 6px rgba(40,200,64,0); } }
+
+  /* 툴바 네비 (세그먼티드) */
+  .toolbar { padding: 12px 18px; border-bottom: 1px solid var(--stroke);
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,0.28); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+  .brand .logo { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-size: 14px;
+    box-shadow: 0 4px 12px rgba(10,132,255,0.4); }
+  .seg { position: relative; display: flex; gap: 2px; margin-left: auto;
+    background: rgba(120,120,140,0.14); border-radius: 12px; padding: 3px; }
+  .seg-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; border-radius: 9px;
+    background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: transform 0.4s var(--spring), width 0.4s var(--spring); z-index: 0; }
+  .seg-item { position: relative; z-index: 1; border: 0; background: transparent; cursor: pointer;
+    font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--ink-soft);
+    padding: 6px 14px; border-radius: 9px; transition: color 0.25s; white-space: nowrap; }
+  .seg-item.active { color: var(--accent); }
+
+  /* ---------- 본문 ---------- */
+  .content { padding: 30px; display: grid; gap: 22px; }
+
+  .hero { border-radius: 22px; padding: 34px 32px;
+    background: linear-gradient(135deg, rgba(94,92,230,0.14), rgba(10,132,255,0.06));
+    border: 1px solid var(--stroke); box-shadow: inset 0 1px 0 var(--hairline); }
+  .hero .kicker { font-size: 13px; font-weight: 700; color: var(--accent-2); letter-spacing: 0.02em; }
+  .hero h1 { font-size: 34px; line-height: 1.15; font-weight: 800; margin-top: 8px; letter-spacing: -0.02em; }
+  .hero h1 .grad { background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { margin-top: 14px; max-width: 30em; color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
+  .cta { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .btn { border: 0; cursor: pointer; font-family: var(--font); font-weight: 700; font-size: 14px;
+    padding: 11px 20px; border-radius: 14px; transition: transform 0.18s var(--spring), box-shadow 0.2s, filter 0.2s;
+    display: inline-flex; align-items: center; gap: 7px; }
+  .btn:active { transform: scale(0.95); }
+  .btn-primary { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 10px 24px -6px rgba(10,132,255,0.6); }
+  .btn-primary:hover { filter: brightness(1.05); box-shadow: 0 14px 30px -6px rgba(10,132,255,0.7); }
+  .btn-ghost { color: var(--ink); background: var(--glass);
+    backdrop-filter: blur(10px); border: 1px solid var(--stroke); box-shadow: inset 0 1px 0 var(--hairline); }
+  .btn-ghost:hover { background: var(--glass-strong); }
+
+  /* 닉네임 필드 (iOS 입력) */
+  .field-card { border-radius: 18px; padding: 22px; }
+  .field-card h2 { font-size: 17px; font-weight: 700; }
+  .field-card p { font-size: 13px; color: var(--ink-faint); margin-top: 4px; }
+  .field-row { display: flex; gap: 10px; align-items: center; margin-top: 14px; max-width: 380px; }
+  .ios-input { flex: 1; border: 1px solid var(--stroke); background: rgba(255,255,255,0.7);
+    border-radius: 12px; padding: 11px 14px; font-family: var(--font); font-size: 14px; color: var(--ink);
+    outline: none; transition: border 0.2s, box-shadow 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.04); }
+  .ios-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(10,132,255,0.14); }
+  .saved { font-size: 13px; color: #1a8f3c; font-weight: 600; }
+
+  /* 흐름 카드 그리드 */
+  .flow h2 { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+  .flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .flow-card { border-radius: 18px; padding: 18px; cursor: pointer;
+    transition: transform 0.3s var(--spring), box-shadow 0.3s; }
+  .flow-card:hover { transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 24px 40px -18px rgba(30,40,90,0.35), inset 0 1px 0 var(--hairline); }
+  .flow-card:active { transform: translateY(-2px) scale(0.99); }
+  .flow-card .emoji { font-size: 26px; }
+  .flow-card .t { margin-top: 10px; font-weight: 700; font-size: 15px; }
+  .flow-card .d { margin-top: 3px; font-size: 12.5px; color: var(--ink-faint); line-height: 1.4; }
+
+  /* ---------- macOS Dock ---------- */
+  .dock-wrap { position: fixed; bottom: 22px; left: 0; right: 0; z-index: 30;
+    display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+  .dock-tip { pointer-events: none; font-size: 12px; font-weight: 600; color: var(--ink);
+    background: var(--glass-strong); backdrop-filter: blur(20px); padding: 5px 12px; border-radius: 8px;
+    border: 1px solid var(--stroke); box-shadow: var(--shadow); opacity: 0; transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s; }
+  .dock-tip.show { opacity: 1; transform: translateY(0); }
+  .dock { --dock-base: 54px; pointer-events: auto; display: flex; align-items: flex-end; gap: 10px;
+    padding: 10px 14px; border-radius: 22px;
+    background: var(--glass); backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--hairline); box-shadow: var(--shadow), inset 0 1px 0 var(--hairline); }
+  .dock-item { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center;
+    font-size: 26px; cursor: pointer; transition: width 0.18s ease-out, height 0.18s ease-out, margin 0.18s ease-out;
+    box-shadow: 0 6px 14px -4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.6); position: relative; }
+  .dock-item.i1 { background: linear-gradient(135deg, #ff7eb3, #ff5f6d); }
+  .dock-item.i2 { background: linear-gradient(135deg, #5ea0ff, #5e5ce6); }
+  .dock-item.i3 { background: linear-gradient(135deg, #58d68d, #16a085); }
+  .dock-item.i4 { background: linear-gradient(135deg, #ffd36e, #ff9f43); }
+  .dock-item.bounce { animation: bounce 0.6s var(--spring); }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-22px); } }
+
+  .concept-tag { position: fixed; top: 16px; left: 16px; z-index: 40; font-size: 12px; font-weight: 700;
+    color: var(--ink-soft); background: var(--glass-strong); backdrop-filter: blur(20px);
+    padding: 6px 12px; border-radius: 999px; border: 1px solid var(--stroke); box-shadow: var(--shadow); }
+
+  @media (max-width: 640px) {
+    .flow-grid { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 26px; }
+    .seg { display: none; }
+    .content { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+
+  <div class="concept-tag">시안 1 · Sonoma Daylight</div>
+
+  <div class="stage">
+    <div class="window reveal">
+      <!-- 타이틀바 -->
+      <div class="titlebar">
+        <div class="traffic"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+        <span class="win-title">원데이 AI 클래스</span>
+        <span class="live-badge"><span class="dot"></span>실시간</span>
+      </div>
+      <!-- 툴바 네비 -->
+      <div class="toolbar">
+        <div class="brand"><span class="logo">🚀</span><span>AI 메이커데이</span></div>
+        <div class="seg">
+          <div class="seg-pill"></div>
+          <button class="seg-item active">홈</button>
+          <button class="seg-item">강의 자료</button>
+          <button class="seg-item">결과 제출</button>
+          <button class="seg-item">대시보드</button>
+        </div>
+      </div>
+      <!-- 본문 -->
+      <div class="content">
+        <section class="hero glass">
+          <p class="kicker">오늘의 미션</p>
+          <h1>AI와 함께 내가 상상한 것을<br /><span class="grad">실제로 만드는 하루</span></h1>
+          <p>코딩 문법을 외우는 하루가 아닙니다. 생각하고 → 설명하고 → 만들고 → 고치고 → 다듬는 과정을 AI와 함께 직접 경험합니다.</p>
+          <div class="cta">
+            <button class="btn btn-primary">강의 자료 보기 →</button>
+            <button class="btn btn-ghost">결과물 제출하기</button>
+          </div>
+        </section>
+
+        <section class="field-card glass">
+          <h2>먼저, 오늘 쓸 닉네임을 정해요</h2>
+          <p>제출한 결과물을 한 사람으로 묶는 데 쓰여요. 실명 대신 별명을 적어주세요.</p>
+          <div class="field-row">
+            <input class="ios-input" placeholder="예: 코딩하는너구리" value="코딩하는너구리" />
+            <span class="saved">저장됨 ✓</span>
+          </div>
+        </section>
+
+        <section class="flow">
+          <h2>오늘의 흐름</h2>
+          <div class="flow-grid">
+            <div class="flow-card glass"><div class="emoji">💡</div><div class="t">아이디어 찾기</div><div class="d">만들고 싶은 걸 AI와 함께 발견</div></div>
+            <div class="flow-card glass"><div class="emoji">🗺️</div><div class="t">계획 세우기</div><div class="d">오늘 만들 크기로 범위 정하기</div></div>
+            <div class="flow-card glass"><div class="emoji">🎨</div><div class="t">화면 설계</div><div class="d">사용 흐름과 분위기 정하기</div></div>
+            <div class="flow-card glass"><div class="emoji">🤖</div><div class="t">함께 만들기</div><div class="d">AI와 첫 버전 제작</div></div>
+            <div class="flow-card glass"><div class="emoji">🐞</div><div class="t">고치기</div><div class="d">문제를 설명하고 해결</div></div>
+            <div class="flow-card glass"><div class="emoji">🎤</div><div class="t">발표하기</div><div class="d">내가 만든 걸 보여주기</div></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- macOS Dock -->
+  <div class="dock-wrap">
+    <div class="dock-tip"></div>
+    <div class="dock">
+      <div class="dock-item i1" data-label="홈">🏠</div>
+      <div class="dock-item i2" data-label="강의 자료">📚</div>
+      <div class="dock-item i3" data-label="결과 제출">✏️</div>
+      <div class="dock-item i4" data-label="대시보드">📊</div>
+    </div>
+  </div>
+
+  <script src="mac-interactions.js"></script>
+</body>
+</html>

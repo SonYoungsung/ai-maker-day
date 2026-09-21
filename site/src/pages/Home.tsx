@@ -1,9 +1,103 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useNickname } from "../lib/useNickname";
+import { useStudent } from "../lib/useStudent";
+
+function NicknameCard() {
+  const { nickname, status, claim, reset } = useStudent();
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function onClaim() {
+    const name = value.trim();
+    if (!name) {
+      setError("닉네임을 입력해 주세요.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await claim(name);
+      if (res.status === "taken") {
+        setError("이미 사용 중인 닉네임이에요. 다른 닉네임을 골라주세요.");
+      } else if (res.status === "error") {
+        setError(`등록 실패: ${res.message}`);
+      } else {
+        setValue("");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (status === "loading") {
+    return (
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+        <p className="text-sm text-slate-400">닉네임 확인 중…</p>
+      </section>
+    );
+  }
+
+  if (status === "ready") {
+    return (
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+        <h2 className="text-lg font-bold">
+          <span className="text-indigo-300">{nickname}</span>님으로 진행 중이에요
+        </h2>
+        <p className="mt-1 text-sm text-slate-400">
+          이 닉네임으로 제출한 결과물이 하나로 모여요. 다음에 접속해도 다시 입력할 필요 없어요.
+        </p>
+        <button
+          onClick={reset}
+          className="mt-4 text-xs text-slate-400 underline hover:text-slate-200"
+        >
+          다른 닉네임으로 시작
+        </button>
+      </section>
+    );
+  }
+
+  // anonymous / conflict
+  return (
+    <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+      <h2 className="text-lg font-bold">먼저, 오늘 쓸 닉네임을 정해요</h2>
+      <p className="mt-1 text-sm text-slate-400">
+        제출한 결과물을 한 사람으로 묶는 <b className="text-slate-200">나만의 키</b>예요. 실명 대신
+        별명을 적어주세요. 한 번 정하면 이 브라우저에서 계속 쓰여요.
+      </p>
+      {status === "conflict" && (
+        <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+          이전에 쓰던 닉네임을 확인할 수 없어요(다른 사람이 쓰고 있거나 처음 접속). 새 닉네임을
+          정해주세요.
+        </p>
+      )}
+      <div className="mt-4 flex max-w-sm items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onClaim();
+          }}
+          placeholder="예: 코딩하는너구리"
+          className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-indigo-400"
+        />
+        <button
+          onClick={onClaim}
+          disabled={busy}
+          className="rounded-lg bg-indigo-500 px-4 py-2 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-50"
+        >
+          {busy ? "확인 중…" : "시작하기"}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+    </section>
+  );
+}
 
 export default function Home() {
-  const [nickname, setNickname] = useNickname();
-
   return (
     <div className="space-y-10">
       <section className="rounded-3xl border border-slate-800 bg-gradient-to-br from-indigo-500/10 to-transparent p-8 sm:p-12">
@@ -31,25 +125,16 @@ export default function Home() {
             결과물 제출하기
           </Link>
         </div>
+        <p className="mt-5 text-sm text-slate-400">
+          시작 전에{" "}
+          <Link to="/setup" className="font-semibold text-indigo-300 underline">
+            준비하기
+          </Link>
+          에서 Claude에 파일 저장 기능을 켜두면(선택), 보고서가 바탕화면 폴더에 자동 저장돼요.
+        </p>
       </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-        <h2 className="text-lg font-bold">먼저, 오늘 쓸 닉네임을 정해요</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          제출한 결과물을 한 사람으로 묶는 데 쓰여요. 실명 대신 별명을 적어주세요.
-        </p>
-        <div className="mt-4 flex max-w-sm items-center gap-2">
-          <input
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-            placeholder="예: 코딩하는너구리"
-            className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 outline-none focus:border-indigo-400"
-          />
-          {nickname && (
-            <span className="text-sm text-emerald-300">저장됨 ✓</span>
-          )}
-        </div>
-      </section>
+      <NicknameCard />
 
       <section>
         <h2 className="mb-4 text-lg font-bold">오늘의 흐름</h2>
@@ -86,11 +171,15 @@ export default function Home() {
             <b>HTML 보고서</b>를 만들어줘요. 마음에 들 때까지 "이 부분 바꿔줘"로 다듬어요.
           </li>
           <li>
-            <b className="text-indigo-300">3.</b> 완성된 HTML을 복사하거나 다운로드해서{" "}
+            <b className="text-indigo-300">3.</b> 완성된 HTML을 바탕화면 <b>AI메이커데이</b> 폴더에
+            저장(또는 복사·다운로드)해서{" "}
             <Link to="/submit" className="text-indigo-300 underline">
               결과 제출
             </Link>{" "}
-            페이지에 올리면 끝!
+            페이지에 올리면 끝!{" "}
+            <Link to="/setup" className="text-slate-400 underline">
+              (준비하기)
+            </Link>
           </li>
         </ol>
       </section>
