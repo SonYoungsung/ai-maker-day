@@ -30,10 +30,13 @@ function fmtDate(d: string | null | undefined): string {
   return `${Number(mo)}월 ${Number(day)}일`;
 }
 
-// 같은 유저인가 — 닉네임(유일 키, 대소문자 무시)으로 판정. student_id 는 보조.
+// 닉네임은 전역 유일 키 → 유저 식별은 닉네임(대소문자 무시)으로 통일한다.
+const userKey = (r: Submission) => (r.student || "").trim().toLowerCase();
+
+// 같은 유저인가 — 닉네임(유일 키) 기준. student_id 는 보조.
 function sameUser(a: Submission, b: Submission): boolean {
   if (a.student_id && b.student_id) return a.student_id === b.student_id;
-  return (a.student || "").trim().toLowerCase() === (b.student || "").trim().toLowerCase();
+  return userKey(a) === userKey(b);
 }
 
 // 단계 순서(SKILLS 정의 순)로 정렬하기 위한 인덱스
@@ -41,6 +44,29 @@ const stageOrder = (stage: string) => {
   const i = SKILLS.findIndex((s) => s.id === stage);
   return i === -1 ? 999 : i;
 };
+
+// 같은 학생 + 같은 단계 + 같은 날짜 = 같은 제출의 여러 "버전"
+const versionKey = (r: Submission) => `${userKey(r)}|${r.stage}|${r.class_date || ""}`;
+
+interface VersionGroup {
+  key: string;
+  latest: Submission;
+  older: Submission[]; // 최신 → 오래된 순
+}
+
+// DB 는 append-only(이력 보존). 화면에서만 최신본으로 접는다.
+function groupVersions(list: Submission[]): VersionGroup[] {
+  const map = new Map<string, Submission[]>();
+  for (const r of list) {
+    const k = versionKey(r);
+    if (!map.has(k)) map.set(k, []);
+    map.get(k)!.push(r);
+  }
+  return [...map.entries()].map(([key, items]) => {
+    const sorted = [...items].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    return { key, latest: sorted[0], older: sorted.slice(1) };
+  });
+}
 
 export default function Dashboard() {
   const [rows, setRows] = useState<Submission[]>([]);
@@ -52,6 +78,7 @@ export default function Dashboard() {
   // 클릭한 제출(=유저 앵커) + 모달 안에서 현재 보고 있는 보고서
   const [anchor, setAnchor] = useState<Submission | null>(null);
   const [selected, setSelected] = useState<Submission | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   async function refresh() {
     try {
@@ -87,39 +114,59 @@ export default function Dashboard() {
     });
   }, [rows, stageFilter, dateFilter, query]);
 
-  const studentCount = useMemo(
-    () => new Set(rows.map((r) => r.student.trim().toLowerCase())).size,
-    [rows]
+  // 피드: 최신본 1건씩 (최근 제출 순)
+  const feed = useMemo(
+    () =>
+      groupVersions(filtered).sort((a, b) =>
+        a.latest.created_at < b.latest.created_at ? 1 : -1
+      ),
+    [filtered]
   );
 
-  // 앵커 유저의 모든 보고서 (날짜 desc → 단계 순)
-  const userReports = useMemo(() => {
+  const studentCount = useMemo(() => new Set(rows.map(userKey)).size, [rows]);
+  const dedupedTotal = useMemo(() => groupVersions(rows).length, [rows]);
+  const olderTotal = rows.length - dedupedTotal;
+
+  // 앵커 유저의 보고서 — 버전 묶음으로 (날짜 desc → 단계 순)
+  const userGroups = useMemo(() => {
     if (!anchor) return [];
-    return rows
-      .filter((r) => sameUser(r, anchor))
-      .sort((a, b) => {
-        const da = a.class_date || "";
-        const db = b.class_date || "";
-        if (da !== db) return da < db ? 1 : -1; // 날짜 내림차순
-        if (a.stage !== b.stage) return stageOrder(a.stage) - stageOrder(b.stage);
-        return a.created_at < b.created_at ? -1 : 1;
-      });
+    return groupVersions(rows.filter((r) => sameUser(r, anchor))).sort((a, b) => {
+      const da = a.latest.class_date || "";
+      const db = b.latest.class_date || "";
+      if (da !== db) return da < db ? 1 : -1;
+      return stageOrder(a.latest.stage) - stageOrder(b.latest.stage);
+    });
   }, [rows, anchor]);
 
   // 날짜별로 그룹 (좌측 목록용)
   const groupedByDate = useMemo(() => {
-    const map = new Map<string, Submission[]>();
-    for (const r of userReports) {
-      const key = r.class_date || "";
+    const map = new Map<string, VersionGroup[]>();
+    for (const g of userGroups) {
+      const key = g.latest.class_date || "";
       if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(r);
+      map.get(key)!.push(g);
     }
     return [...map.entries()];
-  }, [userReports]);
+  }, [userGroups]);
+
+  const userOlderTotal = useMemo(
+    () => userGroups.reduce((n, g) => n + g.older.length, 0),
+    [userGroups]
+  );
+
+  function toggle(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   function openUser(r: Submission) {
     setAnchor(r);
     setSelected(r);
+    setExpanded(new Set());
   }
   function close() {
     setAnchor(null);
@@ -132,8 +179,11 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-extrabold">강사 대시보드</h1>
           <p className="mt-1 text-sm text-slate-400">
-            제출 {rows.length}건 · 학생 {studentCount}명 ·{" "}
-            {usingSupabase() ? "실시간 수집 중" : "로컬 저장 모드"}
+            제출 {dedupedTotal}건 · 학생 {studentCount}명
+            {olderTotal > 0 && (
+              <span className="text-slate-500"> · 이전 버전 {olderTotal}개</span>
+            )}{" "}
+            · {usingSupabase() ? "실시간 수집 중" : "로컬 저장 모드"}
           </p>
         </div>
         <button
@@ -185,40 +235,44 @@ export default function Dashboard() {
 
       {loading ? (
         <p className="text-slate-500">불러오는 중…</p>
-      ) : filtered.length === 0 ? (
+      ) : feed.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-700 py-16 text-center text-slate-500">
           아직 제출이 없어요. 학생이 제출하면 여기에 실시간으로 나타납니다.
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => openUser(r)}
-              className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-left transition hover:border-indigo-500/50 hover:bg-slate-900"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold">{r.student}</span>
-                <span className="text-xs text-slate-500">{timeAgo(r.created_at)}</span>
-              </div>
-              <div className="mt-2 flex items-center gap-1.5">
-                <StageBadge stage={r.stage} />
-                <span className="text-[11px] text-slate-500">{fmtDate(r.class_date)}</span>
-              </div>
-              {r.project && (
-                <div className="mt-2 text-sm text-slate-200">{r.project}</div>
-              )}
-              {r.summary && (
-                <div className="mt-1 line-clamp-2 text-xs text-slate-400">
-                  {r.summary}
+          {feed.map((g) => {
+            const r = g.latest;
+            return (
+              <button
+                key={g.key}
+                onClick={() => openUser(r)}
+                className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 text-left transition hover:border-indigo-500/50 hover:bg-slate-900"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{r.student}</span>
+                  <span className="text-xs text-slate-500">{timeAgo(r.created_at)}</span>
                 </div>
-              )}
-            </button>
-          ))}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <StageBadge stage={r.stage} />
+                  <span className="text-[11px] text-slate-500">{fmtDate(r.class_date)}</span>
+                  {g.older.length > 0 && (
+                    <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">
+                      이전 버전 {g.older.length}개
+                    </span>
+                  )}
+                </div>
+                {r.project && <div className="mt-2 text-sm text-slate-200">{r.project}</div>}
+                {r.summary && (
+                  <div className="mt-1 line-clamp-2 text-xs text-slate-400">{r.summary}</div>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {/* 유저 상세 모달: 그 유저의 모든 보고서 */}
+      {/* 유저 상세 모달: 그 유저의 모든 보고서 (최신본 + 이전 버전) */}
       {anchor && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4"
@@ -232,8 +286,11 @@ export default function Dashboard() {
               <div>
                 <div className="font-bold">{anchor.student}</div>
                 <div className="mt-0.5 text-xs text-slate-400">
-                  보고서 {userReports.length}건 ·{" "}
-                  {new Set(userReports.map((r) => r.class_date)).size}일치
+                  보고서 {userGroups.length}건 ·{" "}
+                  {new Set(userGroups.map((g) => g.latest.class_date)).size}일치
+                  {userOlderTotal > 0 && (
+                    <span className="text-slate-500"> · 이전 버전 {userOlderTotal}개</span>
+                  )}
                 </div>
               </div>
               <button
@@ -245,31 +302,68 @@ export default function Dashboard() {
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-              {/* 좌: 날짜/단계별 보고서 목록 */}
-              <aside className="thin-scroll max-h-40 shrink-0 overflow-auto border-b border-slate-800 p-3 sm:max-h-none sm:w-64 sm:border-b-0 sm:border-r">
-                {groupedByDate.map(([date, items]) => (
+              {/* 좌: 날짜/단계별 최신본 + 이전 버전 펼치기 */}
+              <aside className="thin-scroll max-h-44 shrink-0 overflow-auto border-b border-slate-800 p-3 sm:max-h-none sm:w-72 sm:border-b-0 sm:border-r">
+                {groupedByDate.map(([date, groups]) => (
                   <div key={date || "unknown"} className="mb-3">
                     <div className="mb-1 px-1 text-xs font-semibold text-slate-500">
                       {fmtDate(date)}
                     </div>
                     <div className="space-y-1">
-                      {items.map((r) => {
-                        const active = selected?.id === r.id;
+                      {groups.map((g) => {
+                        const total = g.older.length + 1;
+                        const isOpen = expanded.has(g.key);
                         return (
-                          <button
-                            key={r.id}
-                            onClick={() => setSelected(r)}
-                            className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition ${
-                              active
-                                ? "bg-indigo-500/20 text-indigo-200"
-                                : "text-slate-300 hover:bg-slate-800"
-                            }`}
-                          >
-                            <StageBadge stage={r.stage} />
-                            <span className="text-[10px] text-slate-500">
-                              {timeAgo(r.created_at)}
-                            </span>
-                          </button>
+                          <div key={g.key}>
+                            <button
+                              onClick={() => setSelected(g.latest)}
+                              className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition ${
+                                selected?.id === g.latest.id
+                                  ? "bg-indigo-500/20 text-indigo-200"
+                                  : "text-slate-300 hover:bg-slate-800"
+                              }`}
+                            >
+                              <span className="flex min-w-0 items-center gap-1.5">
+                                <StageBadge stage={g.latest.stage} />
+                                {g.older.length > 0 && (
+                                  <span className="shrink-0 rounded bg-emerald-500/15 px-1 text-[9px] text-emerald-300">
+                                    최신
+                                  </span>
+                                )}
+                              </span>
+                              <span className="shrink-0 text-[10px] text-slate-500">
+                                {timeAgo(g.latest.created_at)}
+                              </span>
+                            </button>
+
+                            {g.older.length > 0 && (
+                              <>
+                                <button
+                                  onClick={() => toggle(g.key)}
+                                  className="mt-0.5 w-full rounded px-2 py-1 text-left text-[10px] text-slate-500 transition hover:bg-slate-800 hover:text-slate-300"
+                                >
+                                  {isOpen ? "▾" : "▸"} 이전 버전 {g.older.length}개
+                                </button>
+                                {isOpen &&
+                                  g.older.map((o, i) => (
+                                    <button
+                                      key={o.id}
+                                      onClick={() => setSelected(o)}
+                                      className={`ml-3 flex w-[calc(100%-0.75rem)] items-center justify-between gap-2 rounded-lg border-l border-slate-800 px-2 py-1 text-left text-[11px] transition ${
+                                        selected?.id === o.id
+                                          ? "bg-indigo-500/20 text-indigo-200"
+                                          : "text-slate-400 hover:bg-slate-800"
+                                      }`}
+                                    >
+                                      <span>v{total - 1 - i}</span>
+                                      <span className="text-[10px] text-slate-500">
+                                        {timeAgo(o.created_at)}
+                                      </span>
+                                    </button>
+                                  ))}
+                              </>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
