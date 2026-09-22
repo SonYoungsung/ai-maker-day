@@ -5,8 +5,8 @@
 
 ## 한눈 요약
 
-- **프로젝트**: 중·고등학생 원데이(4시간) AI 클래스 웹사이트 — (1) 스킬 5종 배포 + (2) 학생 HTML 보고서 수집/실시간 대시보드.
-- **스킬 원본은 `skills/01~05.md`.** `site/public/skills/`는 `node scripts/build-skills.mjs` 출력물이니 직접 고치지 말 것.
+- **프로젝트**: 중·고등학생 원데이(4시간) AI 클래스 웹사이트 — (1) 스킬 3종 배포 + (2) 학생 HTML 보고서 수집/실시간 대시보드.
+- **스킬 원본은 `skills/01~03.md`.** `site/public/skills/`는 `node scripts/build-skills.mjs` 출력물이니 직접 고치지 말 것.
 - **핵심 트릭**: HTML 한 파일이 보이는 보고서 + 숨은 제출 데이터(`<!--ONEDAY ...-->`)를 동시에 담는다. 파싱은 `site/src/lib/parse.ts`.
 - **스택**: Vite + React + TS + Tailwind v4 + Supabase (`site/`), React Router HashRouter.
 - **repo**: https://github.com/SonYoungsung/ai-maker-day (독립 git repo — 홈 디렉터리 안에 있으니 `git status`로 위치 먼저 확인).

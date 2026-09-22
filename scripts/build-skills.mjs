@@ -19,11 +19,21 @@ const OUT_DIR = join(root, "site/public/skills");
 // 단계 순서 + 다음 단계 안내에 쓸 한글 이름/한 줄 설명.
 // site/src/lib/skills.ts 의 SKILLS 와 id·순서가 일치해야 한다.
 const STAGES = [
-  { id: "01-idea-coach", ko: "아이디어 코치", desc: "오늘 만들 프로젝트 아이디어를 정한다" },
-  { id: "02-blueprint", ko: "설계 스튜디오", desc: "화면·흐름·분위기까지 하나의 설계도로 정리한다" },
-  { id: "03-build", ko: "첫 버전 만들기", desc: "실제로 작동하는 첫 버전을 만든다" },
-  { id: "04-upgrade", ko: "업그레이드", desc: "기능을 더하고 '내가 만든 느낌'이 나게 다듬는다" },
-  { id: "05-demo-coach", ko: "데모 코치", desc: "3분 발표문과 시연 순서를 만든다" },
+  {
+    id: "01-idea-mvp",
+    ko: "아이디어 → 첫 버전",
+    desc: "아이디어를 정하고 곧바로 작동하는 첫 버전까지 만든다",
+  },
+  {
+    id: "02-upgrade",
+    ko: "깎기",
+    desc: "원하는 모습에 가까워질 때까지 한 군데씩 고쳐 나간다",
+    // 반복 단계 — 다음 스킬로 밀지 않고 한 바퀴 더 돌지 학생이 고르게 한다.
+    handoff:
+      "또 한 바퀴 돌래? 바꾸고 싶은 게 더 있으면 계속하자 — 이 스킬을 그대로 다시 쓰면 돼. " +
+      "여기까지 만족하면 다음은 **발표 준비** 단계야. 준비되면 `03-demo.md` 를 **이 대화에 이어서** 넣어줘.",
+  },
+  { id: "03-demo", ko: "발표 준비", desc: "3분 발표문과 시연 순서를 만든다" },
 ];
 
 const tpl = (name) => readFileSync(join(root, "report-templates", name), "utf8").trim();
@@ -38,6 +48,7 @@ if (fi === -1) throw new Error("submission-footer.md 에서 footer 마커를 찾
 const footerTpl = footerRaw.slice(fi).trimEnd();
 
 function handoffFor(i) {
+  if (STAGES[i].handoff) return STAGES[i].handoff;
   const next = STAGES[i + 1];
   if (!next) {
     return `오늘 ${STAGES.length}단계를 모두 마쳤어! 바탕화면 \`AI메이커데이\` 폴더에 보고서 ${STAGES.length}개가 다 모였는지 확인하고, 발표를 멋지게 해보자.`;

@@ -1,0 +1,113 @@
+<!--ONEDAY
+{"stage":"01-idea-mvp","project":"친구 파티 궁합 분석기","summary":"친구 2명의 이름과 특징을 넣으면 궁합 점수와 한줄평이 나오는 첫 버전이 작동한다","payload":{"whyChosen":"친구들이랑 모이면 할 게 없어서 폰만 보는데, 같이 웃을 거리가 있으면 좋겠어서","howToRun":"바탕화면 AI메이커데이 폴더의 내프로젝트.html 을 더블클릭","howItWorks":"친구 2명 이름을 적고 특징을 3개씩 고른 뒤 궁합 보기를 누르면 점수와 한줄평이 나온다","aiDecided":["이름은 '궁합 메이커'로 정함","화면은 한 장 — 입력칸 2개와 버튼 하나, 결과는 아래에 카드로","색은 보라 계열 파스텔","점수는 겹치는 특징 개수로 계산 (AI 없이 규칙으로)","한줄평은 점수 구간별로 미리 써둔 문장에서 고름","캐릭터 그림은 일단 뺌"],"studentChanged":["이름을 '궁합 메이커'에서 '친구 파티 궁합 분석기'로 바꿈","결과에 한줄평이 너무 밋밋해서 더 웃긴 문장으로 교체"],"stuck":[{"problem":"궁합 보기 버튼을 눌러도 아무 일도 안 일어났다","cause":"버튼은 있는데 눌렀을 때 실행될 기능이 연결되지 않았다","fix":"버튼과 기능 이름을 똑같이 맞췄다","learned":"버튼이 안 먹히면 버튼 모양이 아니라 눌렀을 때 실행될 게 연결됐는지부터 본다"}],"next":["점수를 동그란 게이지로 보여주기","결과를 링크로 복사해서 친구한테 보내기","배경이 너무 허전함"]}}
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>친구 파티 궁합 분석기 — 첫 버전</title>
+<style>
+  :root{--ink:#1f2233;--muted:#6b7280;--accent:#6c5ce7;--accent2:#a29bfe;--soft:#f4f3fd;--line:#eee;--ok:#0ea96b;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:#fafafe;line-height:1.6;}
+  .wrap{max-width:680px;margin:0 auto;padding:28px 18px 72px;}
+  header{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(0,0,0,.08);}
+  .badge{display:inline-block;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.3px;}
+  header .eyebrow{margin:12px 0 4px;font-size:14px;opacity:.92;}
+  header h1{margin:0;font-size:25px;line-height:1.3;}
+  header .sub{margin:10px 0 0;font-size:14px;opacity:.92;}
+  .run{margin-top:14px;background:#141726;color:#e8e9f3;border-radius:14px;padding:14px 16px;font-size:14px;}
+  .run b{color:#b7aefc;}
+  .run code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;font-size:13px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px;box-shadow:0 4px 14px rgba(31,34,51,.04);}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--accent);}
+  .card p{margin:0;color:#33374a;}
+  .quote{background:var(--soft);border-radius:12px;padding:13px 15px;font-size:15px;color:#3a3f57;}
+  .flowline{background:var(--soft);border-radius:12px;padding:14px 16px;font-size:14px;margin-top:6px;}
+  ul{margin:6px 0 0;padding-left:20px;}li{margin:5px 0;}
+  .ai{list-style:none;padding:0;margin:6px 0 0;}
+  .ai li{padding-left:24px;position:relative;}
+  .ai li::before{content:"◆";position:absolute;left:0;color:var(--accent2);font-size:12px;top:3px;}
+  .mine{list-style:none;padding:0;margin:6px 0 0;}
+  .mine li{padding-left:24px;position:relative;font-weight:500;}
+  .mine li::before{content:"✎";position:absolute;left:0;color:var(--ok);}
+  .stuck{background:#fff5f5;border:1px solid #ffd9d9;border-radius:16px;padding:18px 20px;margin-top:14px;}
+  .stuck h2{margin:0 0 10px;font-size:15px;color:#d64545;}
+  .row{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed #ffd9d9;}
+  .row:last-child{border-bottom:0;}
+  .row .k{flex:0 0 78px;font-size:13px;font-weight:700;color:#d64545;}
+  .row .v{flex:1;font-size:14px;}
+  .learned{margin-top:10px;background:#fff;border-radius:12px;padding:12px 14px;font-size:14px;}
+  .learned b{color:#d64545;}
+  .foot{margin-top:22px;text-align:center;color:var(--muted);font-size:12px;}
+  @media(max-width:520px){.row{flex-direction:column;gap:2px;}.row .k{flex:none;}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="badge">예시 · SAMPLE</span>
+      <p class="eyebrow">🚀 1단계 · 아이디어 → 첫 버전</p>
+      <h1>친구 파티 궁합 분석기</h1>
+      <p class="sub">친구 2명의 이름과 특징을 넣으면 궁합 점수와 한줄평이 나온다</p>
+    </header>
+
+    <div class="run">
+      <b>실행 방법</b> — 바탕화면 <code>AI메이커데이</code> 폴더의 <code>내프로젝트.html</code> 을 더블클릭하면 브라우저에서 바로 열립니다.
+    </div>
+
+    <div class="card">
+      <h2>왜 이걸 골랐나</h2>
+      <div class="quote">"친구들이랑 모이면 할 게 없어서 폰만 보는데, 같이 웃을 거리가 있으면 좋겠어서."</div>
+    </div>
+
+    <div class="card">
+      <h2>지금 되는 것</h2>
+      <div class="flowline">
+        친구 2명 <b>이름</b>을 적고 <b>특징을 3개씩</b> 고른 뒤 <b>궁합 보기</b>를 누르면 → <b>점수</b>와 <b>한줄평</b>이 나온다.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>AI가 정한 것</h2>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:6px;">처음 만들 때 AI가 알아서 정해놓은 것들 — 마음에 안 들면 다음 단계에서 바꾸면 된다.</p>
+      <ul class="ai">
+        <li>이름은 "궁합 메이커"로 정함</li>
+        <li>화면은 한 장 — 입력칸 2개와 버튼 하나, 결과는 아래에 카드로</li>
+        <li>색은 보라 계열 파스텔</li>
+        <li>점수는 겹치는 특징 개수로 계산 (AI 없이 규칙으로)</li>
+        <li>한줄평은 점수 구간별로 미리 써둔 문장에서 고름</li>
+        <li>캐릭터 그림은 일단 뺌</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>내가 바꾼 것</h2>
+      <ul class="mine">
+        <li>이름을 "궁합 메이커" → <b>"친구 파티 궁합 분석기"</b> 로 바꿈</li>
+        <li>한줄평이 너무 밋밋해서 더 웃긴 문장으로 교체</li>
+      </ul>
+    </div>
+
+    <div class="stuck">
+      <h2>🐞 막혔던 것</h2>
+      <div class="row"><div class="k">문제</div><div class="v">궁합 보기 버튼을 눌러도 아무 일도 안 일어났다.</div></div>
+      <div class="row"><div class="k">원인</div><div class="v">버튼은 있는데 눌렀을 때 실행될 기능이 연결되지 않았다.</div></div>
+      <div class="row"><div class="k">해결</div><div class="v">버튼과 기능 이름을 똑같이 맞췄다.</div></div>
+      <div class="learned"><b>배운 것</b> — 버튼이 안 먹히면 버튼 모양이 아니라 <b>"눌렀을 때 실행될 것"이 연결됐는지</b>부터 본다.</div>
+    </div>
+
+    <div class="card">
+      <h2>다음에 바꾸고 싶은 것</h2>
+      <ul>
+        <li>점수를 동그란 게이지로 보여주기</li>
+        <li>결과를 링크로 복사해서 친구한테 보내기</li>
+        <li>배경이 너무 허전함</li>
+      </ul>
+    </div>
+
+    <p class="foot">AI 메이커데이 · 1단계 아이디어 → 첫 버전 · 예시 보고서</p>
+  </div>
+</body>
+</html>

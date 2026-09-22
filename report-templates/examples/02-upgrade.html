@@ -1,0 +1,115 @@
+<!--ONEDAY
+{"stage":"02-upgrade","project":"친구 파티 궁합 분석기","summary":"3번째 바퀴 — 결과 링크 복사 기능까지 붙이고 점수 게이지·배경을 다듬었다","payload":{"round":3,"thisRound":{"chosen":"결과를 링크로 복사해서 친구한테 보내기","did":"결과가 나온 뒤 '링크 복사' 버튼을 누르면 궁합 결과가 담긴 주소가 복사된다. 원래 하고 싶었던 친구 초대·계정 시스템은 오늘 크기로 줄인 것"},"history":[{"round":1,"changed":"점수를 동그란 게이지로 바꿈"},{"round":2,"changed":"배경을 연보라 파스텔 그라데이션으로, 결과 카드에 그림자와 등장 애니메이션 추가"},{"round":3,"changed":"결과 링크 복사 기능 추가"}],"beforeAfter":{"전체 느낌":{"before":"흰 배경에 글자만 있는 투박한 화면","after":"연보라 파스텔 배경에 카드가 떠 있는 느낌"},"점수":{"before":"숫자만 덩그러니","after":"동그란 게이지 안에 큰 숫자"},"기능":{"before":"궁합 점수 보기만 됨","after":"결과를 링크로 복사해서 친구한테 보낼 수 있음"}},"stuck":[{"problem":"2번째 바퀴에서 배경을 바꾸고 나니 궁합 보기 버튼이 눌리지 않았다","cause":"새로 넣은 배경 레이어가 버튼 위를 덮고 있었다","fix":"배경을 맨 뒤로 보내 버튼이 위에 오도록 순서를 바꿨다","learned":"생김새를 바꾸면 기능이 그대로 되는지 꼭 다시 눌러본다"}],"checked":["링크 복사가 작동한다","원래 되던 궁합 계산이 그대로 작동한다","휴대폰 크기에서도 읽힌다"],"next":["결과를 이미지로 저장하기","3명 이상 그룹 궁합"]}}
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>친구 파티 궁합 분석기 — 깎기 기록</title>
+<style>
+  :root{--ink:#1f2233;--muted:#6b7280;--accent:#6c5ce7;--accent2:#a29bfe;--soft:#f4f3fd;--line:#eee;--ok:#0ea96b;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:#fafafe;line-height:1.6;}
+  .wrap{max-width:680px;margin:0 auto;padding:28px 18px 72px;}
+  header{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(0,0,0,.08);}
+  .badge{display:inline-block;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.3px;}
+  header .eyebrow{margin:12px 0 4px;font-size:14px;opacity:.92;}
+  header h1{margin:0;font-size:25px;line-height:1.3;}
+  header .sub{margin:10px 0 0;font-size:14px;opacity:.92;}
+  .round{display:inline-block;margin-top:14px;background:var(--accent);color:#fff;border-radius:999px;padding:5px 16px;font-size:13px;font-weight:700;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px;box-shadow:0 4px 14px rgba(31,34,51,.04);}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--accent);}
+  .card p{margin:0;color:#33374a;}
+  .pick{background:var(--soft);border-radius:12px;padding:13px 15px;font-size:15px;margin-bottom:10px;}
+  .pick b{color:var(--accent);}
+  .scoped{margin-top:10px;font-size:13px;color:var(--muted);}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px;}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{font-size:12px;color:var(--muted);font-weight:600;}
+  td.k{font-weight:600;width:96px;}
+  td.before{color:var(--muted);}
+  td.after{color:var(--accent);font-weight:500;}
+  td.n{width:44px;color:var(--accent);font-weight:700;}
+  .stuck{background:#fff5f5;border:1px solid #ffd9d9;border-radius:16px;padding:18px 20px;margin-top:14px;}
+  .stuck h2{margin:0 0 10px;font-size:15px;color:#d64545;}
+  .row{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed #ffd9d9;}
+  .row:last-child{border-bottom:0;}
+  .row .k{flex:0 0 78px;font-size:13px;font-weight:700;color:#d64545;}
+  .row .v{flex:1;font-size:14px;}
+  .learned{margin-top:10px;background:#fff;border-radius:12px;padding:12px 14px;font-size:14px;}
+  .learned b{color:#d64545;}
+  .check{list-style:none;padding:0;margin:6px 0 0;}
+  .check li{padding-left:24px;position:relative;margin:5px 0;}
+  .check li::before{content:"☑";position:absolute;left:0;color:var(--ok);font-size:15px;}
+  ul{margin:6px 0 0;padding-left:20px;}li{margin:5px 0;}
+  .foot{margin-top:22px;text-align:center;color:var(--muted);font-size:12px;}
+  @media(max-width:520px){.row{flex-direction:column;gap:2px;}.row .k{flex:none;}th:first-child,td.k{width:70px;}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="badge">예시 · SAMPLE</span>
+      <p class="eyebrow">🔨 2단계 · 깎기</p>
+      <h1>친구 파티 궁합 분석기</h1>
+      <p class="sub">투박한 첫 버전을 원하는 모습에 가깝게</p>
+      <span class="round">3번째 바퀴</span>
+    </header>
+
+    <div class="card">
+      <h2>이번 바퀴에 바꾼 것</h2>
+      <div class="pick"><b>내가 고른 것</b> — 결과를 링크로 복사해서 친구한테 보내기</div>
+      <p>결과가 나온 뒤 <b>링크 복사</b> 버튼을 누르면 궁합 결과가 담긴 주소가 복사된다.</p>
+      <p class="scoped">원래는 친구 초대·계정 시스템을 만들고 싶었지만, 오늘 안에 끝낼 수 있는 크기로 줄였다.</p>
+    </div>
+
+    <div class="card">
+      <h2>지금까지 바꿔온 것</h2>
+      <table>
+        <tr><th>바퀴</th><th>바꾼 것</th></tr>
+        <tr><td class="n">1</td><td>점수를 동그란 게이지로 바꿈</td></tr>
+        <tr><td class="n">2</td><td>배경을 연보라 파스텔 그라데이션으로, 결과 카드에 그림자와 등장 애니메이션 추가</td></tr>
+        <tr><td class="n">3</td><td>결과 링크 복사 기능 추가</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>처음 → 지금</h2>
+      <table>
+        <tr><th></th><th>처음</th><th>지금</th></tr>
+        <tr><td class="k">전체 느낌</td><td class="before">흰 배경에 글자만 있는 투박한 화면</td><td class="after">연보라 파스텔 배경에 카드가 떠 있는 느낌</td></tr>
+        <tr><td class="k">점수</td><td class="before">숫자만 덩그러니</td><td class="after">동그란 게이지 안에 큰 숫자</td></tr>
+        <tr><td class="k">기능</td><td class="before">궁합 점수 보기만 됨</td><td class="after">결과를 링크로 복사해서 친구한테 보낼 수 있음</td></tr>
+      </table>
+    </div>
+
+    <div class="stuck">
+      <h2>🐞 막혔던 것</h2>
+      <div class="row"><div class="k">문제</div><div class="v">2번째 바퀴에서 배경을 바꾸고 나니 궁합 보기 버튼이 눌리지 않았다.</div></div>
+      <div class="row"><div class="k">원인</div><div class="v">새로 넣은 배경 레이어가 버튼 위를 덮고 있었다.</div></div>
+      <div class="row"><div class="k">해결</div><div class="v">배경을 맨 뒤로 보내 버튼이 위에 오도록 순서를 바꿨다.</div></div>
+      <div class="learned"><b>배운 것</b> — 생김새를 바꾸면 <b>기능이 그대로 되는지 꼭 다시 눌러본다</b>.</div>
+    </div>
+
+    <div class="card">
+      <h2>확인한 것</h2>
+      <ul class="check">
+        <li>링크 복사가 작동한다</li>
+        <li>원래 되던 궁합 계산이 그대로 작동한다</li>
+        <li>휴대폰 크기에서도 읽힌다</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>다음에 바꾸고 싶은 것</h2>
+      <ul>
+        <li>결과를 이미지로 저장하기</li>
+        <li>3명 이상 그룹 궁합</li>
+      </ul>
+    </div>
+
+    <p class="foot">AI 메이커데이 · 2단계 깎기 · 예시 보고서</p>
+  </div>
+</body>
+</html>
