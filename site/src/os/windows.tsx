@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type AppId = "home" | "materials" | "submit" | "dashboard" | "setup" | "help";
+export type AppId = "home" | "materials" | "submit" | "dashboard" | "help";
 
 // 창 기본 크기/위치 오프셋 (컴포넌트는 apps.tsx 가 매핑 — 순환참조 방지).
 export const APP_META: Record<AppId, { title: string; w: number; h: number; off: [number, number] }> = {
@@ -15,12 +15,11 @@ export const APP_META: Record<AppId, { title: string; w: number; h: number; off:
   materials: { title: "강의 자료", w: 720, h: 580, off: [-46, 22] },
   submit: { title: "결과 제출", w: 700, h: 640, off: [40, 40] },
   dashboard: { title: "강사 대시보드", w: 900, h: 580, off: [24, -6] },
-  setup: { title: "준비하기", w: 700, h: 600, off: [-30, 60] },
   help: { title: "읽어보기", w: 480, h: 460, off: [60, 30] },
 };
 
 // Dock 에 노출되는 앱 순서
-export const DOCK_APPS: AppId[] = ["home", "materials", "submit", "dashboard", "setup"];
+export const DOCK_APPS: AppId[] = ["home", "materials", "submit", "dashboard"];
 
 export interface WinState {
   id: AppId;

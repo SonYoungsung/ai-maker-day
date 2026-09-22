@@ -24,9 +24,9 @@
   <!DOCTYPE html> ... 예쁜 보고서 ...
   ```
   파싱: `site/src/lib/parse.ts` (정규식 `/<!--\s*ONEDAY\s*([\s\S]*?)-->/i` → `JSON.parse`).
-- **바탕화면 저장 흐름**: 각 스킬 마지막 단계가 완성 HTML을 `~/Desktop/AI메이커데이/<stage>.html`로 저장하게 안내. 파일명이 단계 코드로 고정 → 8단계 = 파일 8개가 한 폴더에 쌓임. (자동 저장은 **파일 시스템 접근 필요**, 없으면 다운로드 폴백 — `docs/filesystem-connector.md` 참고.)
-- **[결정 2026-09-21] 제출은 수동 유지.** Filesystem 익스텐션은 "바탕화면 저장"까지만 자동이고, **사이트 제출은 학생이 결과 제출 페이지에 직접 업로드**하는 방식을 유지한다. (자동 제출 = 폴더 감시 스크립트나 커스텀 커넥터가 필요한 별도 장치 — 지금은 안 만든다.) 이유: 학생이 최종본을 확인하고 닉네임 넣고 의식적으로 제출하는 편이 데이터 품질·비개발 학생 단순성에 유리.
-- **[결정 2026-09-21] 파일 저장은 공식 Filesystem 익스텐션 사용.** 커스텀 `.mcpb` 익스텐션은 만들지 않는다(파일 저장만 필요하면 공식으로 충분). 커스텀은 "저장+자동제출 원클릭"이 필요할 때만 재고. 학생 안내용 **`site` "준비하기"(`/setup`) 페이지** 추가 — 공식 익스텐션 설치 3단계 + 사용/폴백/보안. Home·Materials·Nav에서 링크.
+- **바탕화면 저장 흐름**: 각 스킬 마지막 단계가 완성 HTML을 `~/Desktop/AI메이커데이/<stage>.html`로 저장하게 안내. 파일명이 단계 코드로 고정 → 8단계 = 파일 8개가 한 폴더에 쌓임. (학생이 내려받아 그 폴더에 직접 저장한다.)
+- **[결정 2026-09-21] 제출은 수동 유지.** **사이트 제출은 학생이 결과 제출 페이지에 직접 업로드**하는 방식을 유지한다. (자동 제출 = 폴더 감시 스크립트나 커스텀 커넥터가 필요한 별도 장치 — 지금은 안 만든다.) 이유: 학생이 최종본을 확인하고 닉네임 넣고 의식적으로 제출하는 편이 데이터 품질·비개발 학생 단순성에 유리.
+- **[결정 2026-09-22] Filesystem 익스텐션 경로 폐기 — 학생이 HTML을 직접 업로드한다.** 공식 익스텐션을 깔아 바탕화면에 자동 저장하려던 계획을 취소하고, 관련 산출물을 제거했다: `site/src/pages/Setup.tsx`("준비하기" 앱), Dock/데스크톱 아이콘·`ic-setup` 심볼·`AppId="setup"` 배선, Home·Materials·Help 의 안내 링크, `docs/filesystem-connector.md`. 이유: 수업 시작 전 설치·권한 설정 단계가 중·고등학생 원데이 클래스에서 가장 큰 이탈 지점인데, 얻는 건 "다운로드 한 번"을 줄이는 것뿐. 커스텀 `.mcpb` 익스텐션도 같은 이유로 만들지 않는다.
 - **[결정 2026-09-21] 스킬 = 3층 구조 + 대화형·심화 원칙.** 모든 스킬 = `공통 진행규칙(report-templates/interaction-preamble.md)` + `단계별 본문` + `공통 footer(report-templates/submission-footer.md)`. 공통 규칙: (1) 곧바로 결과 직행 금지·**한 번에 한 질문**, (2) **되풀이가 아니라 심화** — 단계 올라갈수록 더 구체적 질문(01 개념 → 02 흐름/첫 행동 → 03 버튼·입력 배치). 02·03 질문을 "이어받기(한 줄 확인) vs 이 단계 심화(구체 질문)" 2버킷으로 재구성. 저장 footer: 보고서 저장 → **확인·수정 루프 → 최종 컨펌 → 다음 스킬로 자연 안내**(마지막은 마무리). ONEDAY 블록에서 `student` 제거(닉네임은 웹에서). 앞뒤 공통층은 `scripts/apply-preamble.mjs`·`apply-footer.mjs`로 일괄 재적용. 이유: 하루 8스킬 연속 사용 시 질문 반복 → AI 툴 가치 체감 저하 방지가 핵심 목표.
 - **[결정 2026-09-21] 스킬 회귀 테스트 하네스 (`tests/`).** 가상 학생 페르소나(3종: eager/vague/distracted) ↔ 코치(스킬 피험자) 멀티턴 대화를 **Workflow**(`tests/skill-eval.mjs`)로 돌리고, 기계검사(ONEDAY 유효성) + 심판 에이전트(`tests/rubric.md` 11항목)로 채점. 스킬 고칠 때마다 재실행해 **직행(A2)·반복(B5)·심화부족(B7)** 회귀를 잡음. 실행: 메인 루프가 스킬/페르소나/루브릭 파일을 Read → args로 Workflow 실행 → 반환값을 `tests/reports/`에 저장. 스모크=01~03·eager-gamer·maxExchanges 6 / 풀=01~08×3페르소나. 상세 `tests/README.md`.
 
@@ -47,7 +47,6 @@
 - `report-templates/examples/01~08.html` — 스킬 8종 **더미 예시 보고서**. 하나의 프로젝트("친구 파티 궁합 분석기", 학생 `코딩하는너구리`)가 1→8단계로 이어지는 여정. 8개 모두 파일명=stage 일치 + ONEDAY JSON 유효 + self-contained 검증 통과(`scripts/verify-examples.mjs`).
 - 스킬 footer 8개 + `report-templates/submission-footer.md`를 **"바탕화면 AI메이커데이 폴더에 저장"** 방식으로 교체(`scripts/apply-footer.mjs`로 일괄 반영).
 - README 갱신(폴더 구조/학생 흐름/바탕화면 저장 흐름).
-- `docs/filesystem-connector.md` — 파일 시스템 커넥터 작동 원리 + 학생 사용 흐름 + 강사 세팅.
 
 ## 5. 남은 일 / 사용자가 보류한 것
 
@@ -63,7 +62,6 @@
 AI-edu/                         # 독립 git repo (main), remote=ai-maker-day
 ├── CONTEXT.md                  # ← 이 문서 (세션 연속성)
 ├── README.md                   # 사용자/외부용 설명
-├── docs/filesystem-connector.md# 파일시스템 커넥터 원리+학생흐름+강사세팅
 ├── site/                       # 웹앱
 │   ├── .env                    # (gitignored) VITE_SUPABASE_URL / _ANON_KEY(publishable) / _SESSION_CODE
 │   ├── vite.config.ts          # base:"./" (Pages 배포 시 /ai-maker-day/ 로 변경)

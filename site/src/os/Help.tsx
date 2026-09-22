@@ -17,8 +17,7 @@ export default function Help() {
       </div>
       <p className="text-xs text-slate-500">
         Dock 또는 바탕화면 아이콘으로 각 앱을 열 수 있어요. 창은 드래그로 옮기고 가장자리로 크기를
-        조절할 수 있어요.{" "}
-        <AppLink app="setup" className="text-slate-400 underline">준비하기</AppLink>에서 파일 자동 저장도 켤 수 있어요.
+        조절할 수 있어요.
       </p>
     </div>
   );

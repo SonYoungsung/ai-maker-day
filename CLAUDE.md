@@ -17,4 +17,4 @@
 - **service_role 키 커밋/노출 금지.** 클라이언트엔 publishable(anon) 키만. `site/.env`는 gitignored.
 - 사이트 변경은 `npm run dev` 육안 확인까지.
 
-자세한 내용은 → **`CONTEXT.md`**, 파일 시스템 저장 흐름은 → **`docs/filesystem-connector.md`**.
+자세한 내용은 → **`CONTEXT.md`**.

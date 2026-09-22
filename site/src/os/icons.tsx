@@ -18,7 +18,6 @@ export function IconDefs() {
         <linearGradient id="g-mat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#5ee0a8" /><stop offset="1" stopColor="#12a37a" /></linearGradient>
         <linearGradient id="g-sub" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c39bff" /><stop offset="1" stopColor="#7c4de0" /></linearGradient>
         <linearGradient id="g-dash" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffd36e" /><stop offset="1" stopColor="#f0883a" /></linearGradient>
-        <linearGradient id="g-set" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7be0c0" /><stop offset="1" stopColor="#2aa588" /></linearGradient>
         <linearGradient id="g-brand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#8fe6ff" /><stop offset="1" stopColor="#7c8cff" /></linearGradient>
         <linearGradient id="g-tophi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="rgba(255,255,255,.55)" /><stop offset="0.5" stopColor="rgba(255,255,255,.05)" /><stop offset="1" stopColor="rgba(255,255,255,0)" /></linearGradient>
         <linearGradient id="g-fback" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#5ea8f2" /><stop offset="1" stopColor="#3d7fd6" /></linearGradient>
@@ -51,15 +50,6 @@ export function IconDefs() {
           <rect x="34" y="62" width="13" height="26" rx="4" fill="#fff" />
           <rect x="53" y="46" width="13" height="42" rx="4" fill="#fff" />
           <rect x="72" y="54" width="13" height="34" rx="4" fill="#fff" />
-        </symbol>
-        {/* 준비하기 (설정 슬라이더) */}
-        <symbol id="ic-setup" viewBox="0 0 120 120">
-          <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-set)" />
-          <rect x="8" y="8" width="104" height="104" rx="27" fill="url(#g-tophi)" />
-          <path d="M32 44 H88 M32 60 H88 M32 76 H88" stroke="#fff" strokeWidth="7" strokeLinecap="round" />
-          <circle cx="50" cy="44" r="8" fill="#fff" stroke="url(#g-set)" strokeWidth="3" />
-          <circle cx="70" cy="60" r="8" fill="#fff" stroke="url(#g-set)" strokeWidth="3" />
-          <circle cx="42" cy="76" r="8" fill="#fff" stroke="url(#g-set)" strokeWidth="3" />
         </symbol>
         {/* 폴더 */}
         <symbol id="ic-folder" viewBox="0 0 120 96">

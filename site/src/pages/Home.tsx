@@ -126,11 +126,11 @@ export default function Home() {
           </AppLink>
         </div>
         <p className="mt-5 text-sm text-slate-400">
-          시작 전에{" "}
-          <AppLink app="setup" className="font-semibold text-indigo-300 underline">
-            준비하기
+          Claude 데스크탑 앱만 있으면 준비 끝이에요. 단계마다 나오는 HTML 보고서를 내려받아{" "}
+          <AppLink app="submit" className="font-semibold text-indigo-300 underline">
+            결과 제출
           </AppLink>
-          에서 Claude에 파일 저장 기능을 켜두면(선택), 보고서가 바탕화면 폴더에 자동 저장돼요.
+          에 올리면 됩니다.
         </p>
       </section>
 
@@ -171,15 +171,11 @@ export default function Home() {
             <b>HTML 보고서</b>를 만들어줘요. 마음에 들 때까지 "이 부분 바꿔줘"로 다듬어요.
           </li>
           <li>
-            <b className="text-indigo-300">3.</b> 완성된 HTML을 바탕화면 <b>AI메이커데이</b> 폴더에
-            저장(또는 복사·다운로드)해서{" "}
+            <b className="text-indigo-300">3.</b> 완성된 HTML을 내려받아{" "}
             <AppLink app="submit" className="text-indigo-300 underline">
               결과 제출
             </AppLink>{" "}
-            페이지에 올리면 끝!{" "}
-            <AppLink app="setup" className="text-slate-400 underline">
-              (준비하기)
-            </AppLink>
+            페이지에 올리면 끝!
           </li>
         </ol>
       </section>
