@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SKILLS, skillById } from "../lib/skills";
 import { listSubmissions, subscribe, usingSupabase, type Submission } from "../lib/store";
 import ReportPreview from "../components/ReportPreview";
@@ -79,6 +79,9 @@ export default function Dashboard() {
   const [anchor, setAnchor] = useState<Submission | null>(null);
   const [selected, setSelected] = useState<Submission | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // 백드롭은 "누른 곳과 뗀 곳이 모두 백드롭일 때"만 닫는다.
+  // 모달 안에서 드래그하다 밖에서 손을 떼면 닫혀버리는 오작동 방지.
+  const downOnBackdrop = useRef(false);
 
   async function refresh() {
     try {
@@ -276,13 +279,17 @@ export default function Dashboard() {
       {anchor && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4"
-          onClick={close}
+          onPointerDown={(e) => {
+            downOnBackdrop.current = e.target === e.currentTarget;
+          }}
+          onClick={(e) => {
+            if (downOnBackdrop.current && e.target === e.currentTarget) close();
+          }}
         >
-          <div
-            className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3">
+          {/* 높이는 vh 가 아니라 창 기준(h-full) — 창보다 커져서 헤더가 잘리면 안 되고,
+              안쪽 iframe 의 h-full 이 풀리려면 여기서부터 높이가 확정돼 있어야 한다 */}
+          <div className="flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-5 py-3">
               <div>
                 <div className="font-bold">{anchor.student}</div>
                 <div className="mt-0.5 text-xs text-slate-400">
@@ -375,7 +382,7 @@ export default function Dashboard() {
               <div className="flex min-h-0 flex-1 flex-col">
                 {selected ? (
                   <>
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-2">
+                    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-800 px-4 py-2">
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <StageBadge stage={selected.stage} />
                         <span>{new Date(selected.created_at).toLocaleString("ko-KR")}</span>
@@ -388,10 +395,10 @@ export default function Dashboard() {
                         HTML 다운로드
                       </a>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-auto bg-white">
+                    <div className="min-h-0 flex-1 bg-white">
                       <ReportPreview
                         html={selected.report_html}
-                        className="h-[70vh] w-full border-0 bg-white"
+                        className="h-full w-full border-0 bg-white"
                       />
                     </div>
                   </>
