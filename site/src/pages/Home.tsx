@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppLink } from "../os/windows";
 import { useStudent } from "../lib/useStudent";
+import { SKILLS } from "../lib/skills";
 
 function NicknameCard() {
   const { nickname, status, claim, reset } = useStudent();
@@ -137,26 +138,27 @@ export default function Home() {
       <NicknameCard />
 
       <section>
-        <h2 className="mb-4 text-lg font-bold">오늘의 흐름</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            ["💡", "아이디어 찾기", "만들고 싶은 걸 AI와 함께 발견"],
-            ["🗺️", "계획 세우기", "오늘 만들 크기로 범위 정하기"],
-            ["🎨", "화면 설계", "사용 흐름과 분위기 정하기"],
-            ["🤖", "함께 만들기", "AI와 첫 버전 제작"],
-            ["🐞", "고치기", "문제를 설명하고 해결"],
-            ["🎤", "발표하기", "내가 만든 걸 보여주기"],
-          ].map(([emoji, title, desc]) => (
-            <div
-              key={title}
-              className="rounded-xl border border-slate-800 bg-slate-900/40 p-4"
-            >
-              <div className="text-2xl">{emoji}</div>
-              <div className="mt-2 font-semibold">{title}</div>
-              <div className="text-sm text-slate-400">{desc}</div>
-            </div>
+        <h2 className="text-lg font-bold">오늘의 흐름</h2>
+        <p className="mb-4 mt-1 text-sm text-slate-400">
+          이 순서대로 <b className="text-slate-300">5단계</b>를 진행해요.
+        </p>
+        {/* 단계 정보는 SKILLS 한 곳에서만 온다 — 여기에 따로 적어두면 스킬이 바뀔 때 어긋난다. */}
+        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {SKILLS.map((s) => (
+            <li key={s.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl" aria-hidden>
+                  {s.emoji}
+                </span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-bold text-indigo-300">
+                  {s.order}
+                </span>
+              </div>
+              <div className="mt-2 font-semibold">{s.ko}</div>
+              <div className="text-sm text-slate-400">{s.desc}</div>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6">

@@ -42,7 +42,7 @@ export const SKILLS: SkillMeta[] = [
     short: "첫 버전",
     title: "AI Build Partner",
     emoji: "🤖",
-    desc: "설계도대로 실제 작동하는 첫 버전을 만든다. (막히면 디버깅 루프 내장)",
+    desc: "설계도대로 실제 작동하는 첫 버전을 만든다. 막히면 같이 고친다.",
     output: "작동하는 첫 버전 + Build Log",
   },
   {
