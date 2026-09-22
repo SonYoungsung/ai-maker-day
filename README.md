@@ -23,7 +23,7 @@
 ```
 Claude 데스크탑에서 스킬 사용 → 결과 + HTML 보고서 생성
   → "이 부분 바꿔줘"로 계속 다듬기
-  → 바탕화면 「AI메이커데이」 폴더에 <단계>.html 로 저장 (8단계 = 파일 8개)
+  → 바탕화면 「AI메이커데이」 폴더에 <단계>.html 로 저장 (5단계 = 파일 5개)
 QR로 연 사이트 → [결과 제출] → 그 HTML 붙여넣기/업로드 → 미리보기 → 제출
   → 강사 [대시보드]에 실시간 반영 + 강의 후 데이터셋
 ```
@@ -35,17 +35,31 @@ QR로 연 사이트 → [결과 제출] → 그 HTML 붙여넣기/업로드 → 
 ```
 ~/Desktop/AI메이커데이/
 ├── 01-idea-coach.html
-├── 02-project-planner.html
-├── ...
-└── 08-demo-coach.html      # 단계마다 파일 이름 고정 → 8단계 = 파일 8개
+├── 02-blueprint.html
+├── 03-build.html
+├── 04-upgrade.html
+├── 05-demo-coach.html      # 단계마다 파일 이름 고정 → 5단계 = 파일 5개
+└── 내프로젝트.html          # 학생이 실제로 만든 결과물 (03 단계부터)
 ```
 
-- 파일 이름이 단계 코드로 고정이라, 하루가 끝나면 한 폴더에 8개 보고서가 순서대로 쌓인다.
+- 파일 이름이 단계 코드로 고정이라, 하루가 끝나면 한 폴더에 5개 보고서가 순서대로 쌓인다.
 - 학생은 이 폴더에서 파일을 골라 제출 사이트 **결과 제출**에 올리면 된다.
 
 > **설치할 것은 없다.** Claude가 만든 HTML을 학생이 **내려받아 직접 업로드**하는 흐름이다. (예전에 검토하던 Filesystem 확장 기반 자동 저장은 채택하지 않았다 — 준비 단계를 없애는 쪽을 택했다.)
 
-각 단계 제출물이 실제로 어떤 모습인지는 [`report-templates/examples/`](report-templates/examples) 의 더미 예시 8종에서 그대로 확인할 수 있다.
+각 단계 제출물이 실제로 어떤 모습인지는 [`report-templates/examples/`](report-templates/examples) 의 더미 예시에서 그대로 확인할 수 있다. (⚠️ 예시는 아직 옛 8단계 기준 — 5단계로 재작성 예정)
+
+## 4시간 수업 타임라인
+
+| 교시 | 단계 | 시간 | 제출물 |
+|---|---|---|---|
+| 1 | 💡 아이디어 코치 | 35분 | Project Build Specification |
+| 1~2 | 🗺️ 설계 스튜디오 | 40분 | Project Blueprint |
+| 2~3 | 🤖 첫 버전 만들기 | 60분 | 작동하는 첫 버전 + Build Log |
+| 3~4 | ✨ 업그레이드 | 45분 | Upgrade Log |
+| 4 | 🎤 데모 코치 | 30분 | 3분 발표문 |
+
+합 210분 + 인트로·휴식 30분 = 4시간. **디버깅**은 별도 단계가 아니라 03·04 안에 "막혔을 때" 루프로 들어가 있다(`report-templates/debug-block.md`).
 
 ## 폴더 구조
 
@@ -54,12 +68,14 @@ AI-edu/
 ├── site/                  # 웹 (Vite + React + TS + Tailwind + Supabase)
 │   ├── src/pages/         # 홈 / 강의자료 / 결과제출 / 대시보드
 │   ├── src/lib/           # skills, parse(ONEDAY), store(supabase|local)
-│   └── public/skills/     # 배포되는 스킬 8종 (.md, 제출블록 포함)
-├── skills/                # (원본 참고용 — 배포본은 site/public/skills)
-├── report-templates/      # 제출 보고서 형식 안내
-│   ├── submission-footer.md   # 각 스킬에 붙는 "바탕화면 저장 + 제출" 안내(__STAGE__ 템플릿)
-│   └── examples/              # 스킬 8종 제출물 예시(더미 데이터) 01~08.html
-├── scripts/               # footer 반영/예시 검증 유틸(mjs)
+│   └── public/skills/     # 배포되는 스킬 5종 (.md — build-skills.mjs 가 생성, 직접 수정 금지)
+├── skills/                # ★ 스킬 원본 (단일 진실원) 01~05.md
+├── report-templates/      # 모든 스킬에 공통으로 붙는 층
+│   ├── interaction-preamble.md # 진행 규칙(한 번에 하나씩 / 되풀이 아닌 심화) — H1 아래 주입
+│   ├── debug-block.md          # "막혔을 때" 문제 해결 루프 — __DEBUG_BLOCK__ 자리에 주입
+│   ├── submission-footer.md    # "바탕화면 저장 + 제출" 안내(__STAGE__/__HANDOFF__ 템플릿)
+│   └── examples/               # 제출물 더미 예시 (옛 8단계 기준 — 재작성 예정)
+├── scripts/               # build-skills.mjs(스킬 조립) / verify-examples.mjs
 └── supabase/              # DB 스키마 + RLS
 ```
 

@@ -12,7 +12,7 @@
 
 학생의 **관심사 → 문제/상황 → 아이디어 → 프로젝트 선택 → 하루짜리 MVP** 순서로 대화를 진행한다.
 
-최종적으로 `Project Planner`에게 넘길 수 있는 **Project Build Specification**을 만든다.
+최종적으로 다음 단계(**설계 스튜디오**)에 그대로 넘길 수 있는 **Project Build Specification**을 만든다.
 
 ## 대화 원칙
 

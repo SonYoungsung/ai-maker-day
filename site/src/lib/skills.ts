@@ -1,12 +1,15 @@
-// 원데이 클래스 스킬 8종 메타데이터.
+// 원데이 클래스 스킬 5종 메타데이터.
+// 순서대로 진행하되 단계별 소요 시간은 고정하지 않는다(학생마다 유동적) → 시간 정보는 담지 않는다.
 // 실제 프롬프트 본문은 public/skills/<id>.md 에서 fetch 하거나 다운로드한다.
+// (본문은 skills/<id>.md 가 원본이고 scripts/build-skills.mjs 가 public 으로 조립한다.
+//  여기 id·순서는 그 스크립트의 STAGES 와 일치해야 한다.)
 export interface SkillMeta {
   id: string; // 파일명 = 단계 코드 (제출 데이터의 stage 값과 동일)
   order: number;
   ko: string; // 한국어 이름
+  short: string; // 진행 순서 레일에 쓰는 짧은 이름
   title: string; // 스킬 내부 제목
   emoji: string;
-  period: string; // 교시
   desc: string; // 한 줄 소개
   output: string; // 이 스킬의 최종 결과물(제출 단위)
 }
@@ -16,79 +19,49 @@ export const SKILLS: SkillMeta[] = [
     id: "01-idea-coach",
     order: 1,
     ko: "아이디어 코치",
+    short: "아이디어",
     title: "AI Project Idea Coach",
     emoji: "💡",
-    period: "1교시",
     desc: "관심사에서 출발해 오늘 만들 프로젝트 아이디어를 찾는다.",
     output: "Project Build Specification",
   },
   {
-    id: "02-project-planner",
+    id: "02-blueprint",
     order: 2,
-    ko: "프로젝트 플래너",
-    title: "AI Project Planner",
+    ko: "설계 스튜디오",
+    short: "설계",
+    title: "AI Blueprint Studio",
     emoji: "🗺️",
-    period: "2교시",
-    desc: "아이디어를 오늘 만들 수 있는 설계도로 바꾼다.",
-    output: "Project Brief",
+    desc: "화면·흐름·분위기까지 한 장의 설계도로 정리한다.",
+    output: "Project Blueprint",
   },
   {
-    id: "03-ux-designer",
+    id: "03-build",
     order: 3,
-    ko: "UX 디자이너",
-    title: "AI UX Designer",
-    emoji: "🎨",
-    period: "2~3교시",
-    desc: "화면과 사용 흐름을 명확하게 정한다.",
-    output: "UX Specification",
-  },
-  {
-    id: "04-coding-partner",
-    order: 4,
-    ko: "코딩 파트너",
-    title: "AI Coding Partner",
+    ko: "첫 버전 만들기",
+    short: "첫 버전",
+    title: "AI Build Partner",
     emoji: "🤖",
-    period: "3교시",
-    desc: "AI와 함께 실제로 작동하는 첫 버전을 만든다.",
-    output: "Done / Test / Next",
+    desc: "설계도대로 실제 작동하는 첫 버전을 만든다. (막히면 디버깅 루프 내장)",
+    output: "작동하는 첫 버전 + Build Log",
   },
   {
-    id: "05-debugging-coach",
-    order: 5,
-    ko: "디버깅 코치",
-    title: "AI Debugging Coach",
-    emoji: "🐞",
-    period: "4교시",
-    desc: "문제를 구체적으로 설명하고 스스로 해결한다.",
-    output: "Problem / Cause / Fix / Learned",
-  },
-  {
-    id: "06-feature-builder",
-    order: 6,
-    ko: "기능 빌더",
-    title: "AI Feature Builder",
-    emoji: "🧩",
-    period: "4교시",
-    desc: "작동하는 프로젝트에 기능을 하나씩 추가한다.",
-    output: "Added / How to Use / Next",
-  },
-  {
-    id: "07-design-coach",
-    order: 7,
-    ko: "디자인 코치",
-    title: "AI Design Coach",
+    id: "04-upgrade",
+    order: 4,
+    ko: "업그레이드",
+    short: "업그레이드",
+    title: "AI Upgrade Partner",
     emoji: "✨",
-    period: "4교시",
-    desc: "\"내가 만든 느낌\"이 나도록 디자인을 다듬는다.",
-    output: "Design Changes / Before→After",
+    desc: "기능을 더하고 \"내가 만든 느낌\"이 나도록 다듬는다.",
+    output: "Upgrade Log",
   },
   {
-    id: "08-demo-coach",
-    order: 8,
+    id: "05-demo-coach",
+    order: 5,
     ko: "데모 코치",
+    short: "발표",
     title: "AI Demo Coach",
     emoji: "🎤",
-    period: "5교시",
     desc: "3분 발표문과 시연 순서를 만든다.",
     output: "3-Minute Demo 발표문",
   },

@@ -1,6 +1,43 @@
 import { useState } from "react";
 import { SKILLS, skillFileUrl, type SkillMeta } from "../lib/skills";
 
+// 스킬을 1→5 순서대로 쓴다는 걸 한눈에 보여주는 진행 레일.
+// 동그라미(이모지) 사이를 선으로 잇고, 아래에 번호 + 짧은 이름을 둔다.
+function StepRail() {
+  return (
+    <section
+      aria-label="진행 순서"
+      className="rounded-xl border border-slate-800 bg-slate-900/30 px-4 py-5"
+    >
+      <p className="mb-4 text-center text-xs font-semibold tracking-wide text-slate-400">
+        순서대로 따라가면 돼요
+      </p>
+      <div className="relative">
+        {/* 첫 동그라미 중심 ~ 마지막 동그라미 중심을 잇는 연속 레일.
+            left/right = 스텝 너비(4.5rem)의 절반. 동그라미는 불투명 배경이라 선 위에 얹힌다. */}
+        <div
+          aria-hidden
+          className="absolute left-9 right-9 top-[21px] h-0.5 rounded-full bg-gradient-to-r from-indigo-500/50 via-indigo-400/40 to-indigo-500/20"
+        />
+        <ol className="relative flex items-start justify-between">
+          {SKILLS.map((s) => (
+            <li key={s.id} className="flex w-[4.5rem] flex-col items-center text-center">
+              <span
+                aria-hidden
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-xl shadow-sm"
+              >
+                {s.emoji}
+              </span>
+              <span className="mt-2 text-xs font-bold text-indigo-300">{s.order}</span>
+              <span className="mt-0.5 text-xs leading-tight text-slate-300">{s.short}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 function SkillCard({ skill }: { skill: SkillMeta }) {
   const [copied, setCopied] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -43,14 +80,9 @@ function SkillCard({ skill }: { skill: SkillMeta }) {
       <div className="flex items-start gap-3">
         <div className="text-3xl">{skill.emoji}</div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="rounded-md bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-              {skill.period}
-            </span>
-            <h3 className="font-bold">
-              {skill.order}. {skill.ko}
-            </h3>
-          </div>
+          <h3 className="font-bold">
+            {skill.order}. {skill.ko}
+          </h3>
           <p className="mt-1 text-sm text-slate-400">{skill.desc}</p>
           <p className="mt-1 text-xs text-slate-500">
             최종 결과물: <span className="text-slate-400">{skill.output}</span>
@@ -100,10 +132,12 @@ export default function Materials() {
         </p>
       </header>
 
+      <StepRail />
+
       <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 text-sm text-slate-300">
-        <b className="text-indigo-300">사용법</b> — 스킬은 순서대로 진행하면 좋아요. 각 단계가
-        끝나면 Claude가 제출용 <b>HTML 보고서</b>를 만들어줍니다. 그 파일을 내려받아{" "}
-        <b>결과 제출</b> 페이지에 올리면 됩니다.
+        <b className="text-indigo-300">사용법</b> — 각 단계가 끝나면 Claude가 제출용{" "}
+        <b>HTML 보고서</b>를 만들어줍니다. 그 파일을 내려받아 <b>결과 제출</b> 페이지에 올리면
+        됩니다.
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
