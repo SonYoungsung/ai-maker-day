@@ -19,7 +19,7 @@
 - **ONEDAY 임베디드 주석 트릭**: HTML 한 파일이 (1) 보이는 보고서 + (2) 숨은 제출 데이터를 동시에 담는다.
   ```html
   <!--ONEDAY
-  {"student":"닉네임","stage":"01-idea-coach","project":"...","summary":"...","payload":{...}}
+  {"stage":"01-idea-coach","project":"...","summary":"...","payload":{...}}
   -->
   <!DOCTYPE html> ... 예쁜 보고서 ...
   ```
@@ -51,7 +51,6 @@
 - ② GitHub: 독립 git repo(홈 디렉터리 안에서 `git init`), remote = **https://github.com/SonYoungsung/ai-maker-day** (오타 `ai-maker-dev`→`day` rename 완료), 초기 커밋 push 완료.
 
 **완료 (이번 세션 — 예시 & 저장 흐름):**
-- `report-templates/examples/01~08.html` — 스킬 8종 **더미 예시 보고서**. 하나의 프로젝트("친구 파티 궁합 분석기", 학생 `코딩하는너구리`)가 1→8단계로 이어지는 여정. 8개 모두 파일명=stage 일치 + ONEDAY JSON 유효 + self-contained 검증 통과(`scripts/verify-examples.mjs`). **(⚠️ 옛 8단계 기준 — 5단계로 재작성 필요)**
 - 스킬 footer + `report-templates/submission-footer.md`를 **"바탕화면 AI메이커데이 폴더에 저장"** 방식으로 교체.
 - README 갱신(폴더 구조/학생 흐름/바탕화면 저장 흐름).
 
@@ -61,14 +60,16 @@
 - `report-templates/interaction-preamble.md` 심화 사다리 예시를 5단계 기준으로 교체.
 - `scripts/build-skills.mjs` 신규, `apply-preamble.mjs`·`apply-footer.mjs` trash.
 - `site/src/lib/skills.ts` 5종으로 교체(`period`에 분 단위 시간 포함). `npm run build`(tsc+vite) 통과.
-- README에 4시간 타임라인 표 추가.
+- README에 4시간 타임라인 표 추가(시간은 참고용 — UI에는 시간 표기 없음).
+- `site/src/lib/skills.ts` 에서 `period`(교시·분) 필드 **삭제**, `short`(레일용 짧은 이름) 추가. 강의자료 모달에 1→5 스텝퍼 레일(`StepRail`) 추가, 홈 "오늘의 흐름"을 하드코딩 6단계에서 `SKILLS` 파생으로 교체. 시간은 유동적으로 운영하기로 해서 UI에서 뺐다.
+- `report-templates/examples/` **5단계로 재작성** — 같은 프로젝트("친구 파티 궁합 분석기")가 01→05로 이어지는 여정. 03·04의 "막혔던 것"이 05 발표문 Challenge로 이어지도록 내용을 엮었다. 옛 7개 trash, `verify-examples.mjs` 5/5 통과.
+- `verify-examples.mjs` 에 **`student` 필드 부재 검사** 추가 — 닉네임은 제출 사이트에서 받으므로 보고서 ONEDAY 블록에 이름이 들어가면 실패한다.
 
 ## 5. 남은 일 / 사용자가 보류한 것
 
 - **[보류]** ③ **GitHub Pages 배포**: repo명 `ai-maker-day`에 맞춰 `site/vite.config.ts`의 `base` 조정(예: `/ai-maker-day/`) + Actions 또는 Vercel 연동. (사용자가 "1,2만 먼저"라 보류.)
 - **[보류]** ④ Obsidian 데모 문서에 이 설계 반영(원데이 클래스 데모 문서). — 사용자 확인 후 진행.
 - **[확인 필요]** Supabase 테스트 행 `__conn_test__`(id `2eec229a-3512-47b0-b206-6c59098ddbe1`) 정리. anon 키로는 삭제 불가(delete 정책 없음) → SQL Editor에서 `delete from public.submissions where student = '__conn_test__';` 또는 Supabase MCP로. **사용자가 정리했는지 미확인.**
-- **[다음]** ⑤ `report-templates/examples/` 를 **5단계 기준으로 재작성** (현재 01~08.html = 옛 단계 id). 같은 프로젝트 여정을 01·02·03·04·05 5개로. 이후 `node scripts/verify-examples.mjs` 통과 확인.
 - **[다음]** ⑥ `tests/` 회귀 하네스를 5단계로 갱신 — `tests/README.md`의 스모크/풀 세트 정의와 `.claude/commands/skill-test.md`가 아직 `01~08`·옛 스킬 파일명 기준. `tests/rubric.md` 11항목 자체는 그대로 유효.
 - **[옵션]** 예시를 사이트에서 미리보기(강의자료 페이지에 "제출물 예시 보기") — `site/public/examples/`로 복사 + Materials UI 링크.
 - **[옵션]** 커밋 & push (이번 세션 변경분).
@@ -91,7 +92,7 @@ AI-edu/                         # 독립 git repo (main), remote=ai-maker-day
 │   ├── interaction-preamble.md # 진행 규칙 — H1 바로 아래 주입
 │   ├── debug-block.md          # "막혔을 때" 루프 — __DEBUG_BLOCK__ 자리에 주입 (03·04만)
 │   ├── submission-footer.md    # footer 템플릿(__STAGE__/__HANDOFF__ 치환용)
-│   └── examples/01~08.html     # 제출물 더미 예시 (옛 8단계 기준 — 재작성 필요)
+│   └── examples/01~05.html     # 제출물 더미 예시 (5단계)
 ├── scripts/
 │   ├── build-skills.mjs        # skills/ + report-templates/ → site/public/skills/ 조립
 │   └── verify-examples.mjs     # examples/*.html ONEDAY 파싱 검증

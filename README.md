@@ -11,7 +11,7 @@
 
 ```html
 <!--ONEDAY
-{"student":"닉네임","stage":"01-idea-coach","project":"...","summary":"...","payload":{}}
+{"stage":"01-idea-coach","project":"...","summary":"...","payload":{}}
 -->
 <!DOCTYPE html> ... 예쁜 보고서 ...
 ```
@@ -47,7 +47,7 @@ QR로 연 사이트 → [결과 제출] → 그 HTML 붙여넣기/업로드 → 
 
 > **설치할 것은 없다.** Claude가 만든 HTML을 학생이 **내려받아 직접 업로드**하는 흐름이다. (예전에 검토하던 Filesystem 확장 기반 자동 저장은 채택하지 않았다 — 준비 단계를 없애는 쪽을 택했다.)
 
-각 단계 제출물이 실제로 어떤 모습인지는 [`report-templates/examples/`](report-templates/examples) 의 더미 예시에서 그대로 확인할 수 있다. (⚠️ 예시는 아직 옛 8단계 기준 — 5단계로 재작성 예정)
+각 단계 제출물이 실제로 어떤 모습인지는 [`report-templates/examples/`](report-templates/examples) 의 더미 예시 5종에서 그대로 확인할 수 있다. 하나의 프로젝트("친구 파티 궁합 분석기")가 1→5단계로 이어지는 여정이다.
 
 ## 4시간 수업 타임라인
 
@@ -59,7 +59,7 @@ QR로 연 사이트 → [결과 제출] → 그 HTML 붙여넣기/업로드 → 
 | 3~4 | ✨ 업그레이드 | 45분 | Upgrade Log |
 | 4 | 🎤 데모 코치 | 30분 | 3분 발표문 |
 
-합 210분 + 인트로·휴식 30분 = 4시간. **디버깅**은 별도 단계가 아니라 03·04 안에 "막혔을 때" 루프로 들어가 있다(`report-templates/debug-block.md`).
+시간은 **참고용 목표치**다 — 순서만 지키고 속도는 학생마다 유동적으로 간다. 합 210분 + 인트로·휴식 30분 = 4시간. **디버깅**은 별도 단계가 아니라 03·04 안에 "막혔을 때" 루프로 들어가 있다(`report-templates/debug-block.md`).
 
 ## 폴더 구조
 
@@ -74,7 +74,7 @@ AI-edu/
 │   ├── interaction-preamble.md # 진행 규칙(한 번에 하나씩 / 되풀이 아닌 심화) — H1 아래 주입
 │   ├── debug-block.md          # "막혔을 때" 문제 해결 루프 — __DEBUG_BLOCK__ 자리에 주입
 │   ├── submission-footer.md    # "바탕화면 저장 + 제출" 안내(__STAGE__/__HANDOFF__ 템플릿)
-│   └── examples/               # 제출물 더미 예시 (옛 8단계 기준 — 재작성 예정)
+│   └── examples/               # 제출물 더미 예시 01~05.html
 ├── scripts/               # build-skills.mjs(스킬 조립) / verify-examples.mjs
 └── supabase/              # DB 스키마 + RLS
 ```

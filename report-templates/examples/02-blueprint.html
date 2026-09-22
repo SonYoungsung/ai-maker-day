@@ -1,0 +1,143 @@
+<!--ONEDAY
+{"stage":"02-blueprint","project":"친구 파티 궁합 분석기","summary":"친구 2명의 이름과 특징을 넣으면 캐릭터 카드와 궁합 점수를 보여주는 화면 한 장짜리 설계도","payload":{"goal":"친구들끼리 모였을 때 5초 만에 웃을 거리를 만든다","targetUser":"우리 반 친구들","coreExperience":"친구 2명의 이름과 특징을 넣으면 캐릭터 카드 2장과 궁합 점수·한줄평이 나온다","mainFlow":["열면 친구 2명 입력칸이 바로 보인다","이름을 적고 특징을 3개씩 고른다","'궁합 보기' 버튼을 누른다","아래에 캐릭터 카드 2장 + 궁합 점수 + 한줄평이 나타난다"],"screens":[{"name":"메인 (한 화면)","purpose":"입력부터 결과까지 한 화면에서 끝낸다","mainContent":"큰 제목과 친구 2명 입력 카드","primaryAction":"'궁합 보기' 버튼 — 보라색, 화면에서 가장 큼","secondaryActions":["'다시 하기' 버튼"],"result":"버튼 아래에 캐릭터 카드 2장, 궁합 점수, 한줄평이 나타난다"}],"uiElements":{"button":"'궁합 보기'(보라, 큼) / '다시 하기'(테두리만)","input":"이름 입력칸 2개 — 안내 문구 '친구 이름을 적어줘'","card":"캐릭터 카드 2장을 나란히, 그 아래 점수와 한줄평","result":"점수는 큰 숫자, 한줄평은 한 문장"},"visualDirection":{"mood":"밝고 귀여운 파스텔, 카드 게임 느낌","colors":"보라(#6c5ce7) 강조 + 연보라 배경, 강조색은 하나만","typography":"제목은 둥글고 굵게, 점수는 아주 크게","shape":"모서리 많이 둥글게","animation":"결과가 아래에서 살짝 떠오르기"},"mobile":["입력 카드 2개를 세로로 배치","버튼은 화면 가로를 꽉 채우기","점수 글자는 더 크게"],"features":{"mustHave":["친구 2명 이름 입력","특징 3개씩 고르기","궁합 점수 계산","캐릭터 카드 2장 + 한줄평"],"niceToHave":["다시 하기 버튼","결과 링크 복사"],"later":["3명 이상 그룹 궁합","결과 이미지로 저장"]},"aiUsage":"AI 없이 만든다 — 겹치는 특징 개수로 점수를 계산하고, 한줄평은 점수 구간별로 미리 써둔 문장에서 고른다","buildOrder":["기본 화면과 제목 만들기","친구 2명 입력칸과 특징 고르기 만들기","'궁합 보기' 누르면 점수 계산되게 하기","캐릭터 카드와 점수·한줄평 보여주기","처음부터 끝까지 한 번 실행해보기"],"definitionOfDone":["메인 화면이 보인다","친구 2명을 입력할 수 있다","궁합 점수가 나온다","처음부터 끝까지 한 번 실행된다"]}}
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>친구 파티 궁합 분석기 — 설계도</title>
+<style>
+  :root{--ink:#1f2233;--muted:#6b7280;--accent:#6c5ce7;--accent2:#a29bfe;--soft:#f4f3fd;--line:#eee;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink);background:#fafafe;line-height:1.6;}
+  .wrap{max-width:680px;margin:0 auto;padding:28px 18px 72px;}
+  header{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(0,0,0,.08);}
+  .badge{display:inline-block;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.3px;}
+  header .eyebrow{margin:12px 0 4px;font-size:14px;opacity:.92;}
+  header h1{margin:0;font-size:25px;line-height:1.3;}
+  header .sub{margin:10px 0 0;font-size:14px;opacity:.92;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px;box-shadow:0 4px 14px rgba(31,34,51,.04);}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--accent);}
+  .card p{margin:0;color:#33374a;}
+  .tag{display:inline-block;background:var(--soft);color:var(--accent);border-radius:999px;padding:5px 12px;font-size:13px;margin:4px 5px 0 0;font-weight:500;}
+  ul{margin:6px 0 0;padding-left:20px;}li{margin:4px 0;}
+  ol.flow{margin:6px 0 0;padding-left:20px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .mini{background:var(--soft);border-radius:12px;padding:12px 14px;}
+  .mini h3{margin:0 0 6px;font-size:13px;color:var(--accent);}
+  .row{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);}
+  .row:last-child{border-bottom:0;}
+  .row .k{flex:0 0 116px;font-size:13px;font-weight:600;color:var(--muted);}
+  .row .v{flex:1;font-size:14px;}
+  .note{background:#fff8e6;border:1px solid #ffe6a8;border-radius:12px;padding:12px 14px;margin-top:14px;font-size:14px;}
+  .check{list-style:none;padding:0;margin:6px 0 0;}
+  .check li{padding-left:24px;position:relative;}
+  .check li::before{content:"☐";position:absolute;left:0;color:var(--accent);font-size:15px;}
+  .foot{margin-top:22px;text-align:center;color:var(--muted);font-size:12px;}
+  @media(max-width:520px){.grid2{grid-template-columns:1fr;}.row{flex-direction:column;gap:2px;}.row .k{flex:none;}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="badge">예시 · SAMPLE</span>
+      <p class="eyebrow">🗺️ 2단계 · 설계 스튜디오 · Project Blueprint</p>
+      <h1>친구 파티 궁합 분석기</h1>
+      <p class="sub">친구들끼리 모였을 때 5초 만에 웃을 거리를 만든다</p>
+    </header>
+
+    <div class="card">
+      <h2>누가 쓰고, 무엇을 얻어 가나</h2>
+      <div class="row"><div class="k">Target User</div><div class="v">우리 반 친구들</div></div>
+      <div class="row"><div class="k">Core Experience</div><div class="v">친구 2명의 이름과 특징을 넣으면 캐릭터 카드 2장과 궁합 점수·한줄평이 나온다.</div></div>
+    </div>
+
+    <div class="card">
+      <h2>사용 흐름 (Main Flow)</h2>
+      <ol class="flow">
+        <li>열면 친구 2명 입력칸이 바로 보인다.</li>
+        <li>이름을 적고 특징을 3개씩 고른다.</li>
+        <li><b>궁합 보기</b> 버튼을 누른다.</li>
+        <li>아래에 캐릭터 카드 2장 + 궁합 점수 + 한줄평이 나타난다.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>화면 — 메인 한 장이면 충분</h2>
+      <div class="row"><div class="k">Purpose</div><div class="v">입력부터 결과까지 한 화면에서 끝낸다</div></div>
+      <div class="row"><div class="k">Main Content</div><div class="v">큰 제목과 친구 2명 입력 카드</div></div>
+      <div class="row"><div class="k">Primary Action</div><div class="v"><b>궁합 보기</b> 버튼 — 보라색, 화면에서 가장 큼</div></div>
+      <div class="row"><div class="k">Secondary</div><div class="v">다시 하기 버튼</div></div>
+      <div class="row"><div class="k">Result</div><div class="v">버튼 아래에 캐릭터 카드 2장, 궁합 점수, 한줄평이 나타난다</div></div>
+    </div>
+
+    <div class="card">
+      <h2>화면 요소 (UI Elements)</h2>
+      <div class="row"><div class="k">Button</div><div class="v">궁합 보기(보라, 큼) / 다시 하기(테두리만)</div></div>
+      <div class="row"><div class="k">Input</div><div class="v">이름 입력칸 2개 — 안내 문구 "친구 이름을 적어줘"</div></div>
+      <div class="row"><div class="k">Card</div><div class="v">캐릭터 카드 2장을 나란히, 그 아래 점수와 한줄평</div></div>
+      <div class="row"><div class="k">Result</div><div class="v">점수는 큰 숫자, 한줄평은 한 문장</div></div>
+    </div>
+
+    <div class="card">
+      <h2>비주얼 방향</h2>
+      <div class="row"><div class="k">Mood</div><div class="v">밝고 귀여운 파스텔, 카드 게임 느낌</div></div>
+      <div class="row"><div class="k">Colors</div><div class="v">보라(#6c5ce7) 강조 + 연보라 배경 · 강조색은 하나만</div></div>
+      <div class="row"><div class="k">Typography</div><div class="v">제목은 둥글고 굵게, 점수는 아주 크게</div></div>
+      <div class="row"><div class="k">Shape</div><div class="v">모서리 많이 둥글게</div></div>
+      <div class="row"><div class="k">Animation</div><div class="v">결과가 아래에서 살짝 떠오르기</div></div>
+    </div>
+
+    <div class="card">
+      <h2>휴대폰에서 볼 때</h2>
+      <ul>
+        <li>입력 카드 2개를 세로로 배치</li>
+        <li>버튼은 화면 가로를 꽉 채우기</li>
+        <li>점수 글자는 더 크게</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>기능 범위</h2>
+      <div>
+        <span class="tag">친구 2명 이름 입력</span>
+        <span class="tag">특징 3개씩 고르기</span>
+        <span class="tag">궁합 점수 계산</span>
+        <span class="tag">캐릭터 카드 2장 + 한줄평</span>
+      </div>
+      <div class="grid2" style="margin-top:12px;">
+        <div class="mini"><h3>Nice to Have</h3><ul><li>다시 하기 버튼</li><li>결과 링크 복사</li></ul></div>
+        <div class="mini"><h3>Later</h3><ul><li>3명 이상 그룹 궁합</li><li>결과 이미지로 저장</li></ul></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>AI는 쓰지 않기로 했어요.</b> 겹치는 특징 개수로 점수를 계산하고, 한줄평은 점수 구간별로 미리 써둔 문장에서 고르면 충분합니다. 억지로 AI를 넣지 않았습니다.
+    </div>
+
+    <div class="card">
+      <h2>만드는 순서 (Build Order)</h2>
+      <ol class="flow">
+        <li>기본 화면과 제목 만들기</li>
+        <li>친구 2명 입력칸과 특징 고르기 만들기</li>
+        <li>궁합 보기를 누르면 점수가 계산되게 하기</li>
+        <li>캐릭터 카드와 점수·한줄평 보여주기</li>
+        <li>처음부터 끝까지 한 번 실행해보기</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>오늘 여기까지 되면 성공</h2>
+      <ul class="check">
+        <li>메인 화면이 보인다</li>
+        <li>친구 2명을 입력할 수 있다</li>
+        <li>궁합 점수가 나온다</li>
+        <li>처음부터 끝까지 한 번 실행된다</li>
+      </ul>
+    </div>
+
+    <p class="foot">AI 메이커데이 · 2단계 설계 스튜디오 · 예시 보고서</p>
+  </div>
+</body>
+</html>
